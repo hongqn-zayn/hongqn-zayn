@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>11.2 模拟退火算法</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg-page: #F0F7FF; --bg-card: #ffffff; --bg-hover: #FFF3E0;
+    --text-primary: #2E3440; --text-secondary: #4C566A; --text-muted: #6B7280;
+    --border: #ECEFF1; --shadow: 0 2px 12px rgba(0,0,0,0.03);
+    --shadow-hover: 0 4px 20px rgba(0,0,0,0.05);
+    --radius: 16px; --radius-lg: 20px; --radius-sm: 10px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    --color-indigo: #3949AB; --color-indigo-bg: #E8EAF6;
+    --color-orange: #FB8C00; --color-orange-bg: #FFF3E0;
+    --color-green: #43A047; --color-green-bg: #E8F5E9;
+    --color-pink: #E91E63; --color-pink-bg: #FDEBEF;
+    --color-cyan: #00ACC1; --color-cyan-bg: #E0F7FA;
+    --color-blue: #1E88E5; --color-blue-bg: #E3F2FD;
+    --color-amber: #FF8F00; --color-amber-bg: #FFF8E1;
+    --color-red: #E53935; --color-red-bg: #FFEBEE;
+    --color-purple: #8E24AA; --color-purple-bg: #F3E5F5;
+}
+body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; display: flex; flex-direction: column; }
+.top-bar { height: 60px; background: white; display: flex; align-items: center; padding: 0 28px; justify-content: space-between; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.top-bar h2 { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+.top-bar-right { display: flex; align-items: center; gap: 12px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.content-area { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg-page); max-width: 1200px; margin: 0 auto; width: 100%; }
+.content-section { display: block; animation: fadeIn 0.4s ease-out; margin-bottom: 40px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.section-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid var(--border); }
+.section-header h3 { font-size: 34px; font-weight: 600; color: var(--text-primary); }
+.section-header p { font-size: 20px; color: var(--text-secondary); margin-top: 8px; }
+.subsection-title { font-size: 26px; color: var(--color-indigo); margin-top: 28px; margin-bottom: 16px; padding-left: 14px; border-left: 5px solid var(--color-indigo); display: flex; align-items: center; gap: 10px; }
+.subsection-title.h4 { font-size: 22px; }
+.feature-card { background: var(--bg-card); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; display: flex; gap: 24px; border: 2px solid var(--border); transition: var(--transition); box-shadow: var(--shadow); }
+.feature-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.feature-card.card-indigo { background: linear-gradient(135deg, #E8EAF6 0%, #ffffff 50%); border: 2px solid #9FA8DA; }
+.feature-card.card-cyan { background: linear-gradient(135deg, #E0F7FA 0%, #ffffff 50%); border: 2px solid #80DEEA; }
+.feature-card.card-blue { background: linear-gradient(135deg, #E3F2FD 0%, #ffffff 50%); border: 2px solid #90CAF9; }
+.feature-card.card-green { background: linear-gradient(135deg, #E8F5E9 0%, #ffffff 50%); border: 2px solid #A5D6A7; }
+.feature-card.card-orange { background: linear-gradient(135deg, #FFF3E0 0%, #ffffff 50%); border: 2px solid #FFCC80; }
+.feature-card.card-amber { background: linear-gradient(135deg, #FFF8E1 0%, #ffffff 50%); border: 2px solid #FFE082; }
+.feature-card.card-pink { background: linear-gradient(135deg, #FDEBEF 0%, #ffffff 50%); border: 2px solid #F48FB1; }
+.feature-card.card-red { background: linear-gradient(135deg, #FFEBEE 0%, #ffffff 50%); border: 2px solid #EF9A9A; }
+.feature-card.card-purple { background: linear-gradient(135deg, #F3E5F5 0%, #ffffff 50%); border: 2px solid #CE93D8; }
+.card-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; transition: transform 0.3s; }
+.feature-card:hover .card-icon { transform: scale(1.08); }
+.card-content { flex: 1; }
+.card-content h4 { font-size: 26px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.card-content p { font-size: 20px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 14px; }
+.feature-list { margin-top: 14px; }
+.feature-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 14px 18px; background: #ffffff; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: all 0.3s; }
+.feature-item:hover { background: var(--bg-hover); border-color: rgba(57,73,171,0.2); }
+.feature-badge { padding: 5px 12px; background: #E8EAF6; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; color: #3949AB; flex-shrink: 0; }
+.feature-badge.green { background: #E8F5E9; color: #43A047; }
+.feature-badge.orange { background: #FFF3E0; color: #FB8C00; }
+.feature-badge.cyan { background: #E0F7FA; color: #00ACC1; }
+.feature-badge.pink { background: #FDEBEF; color: #E91E63; }
+.feature-badge.red { background: #FFEBEE; color: #E53935; }
+.feature-badge.purple { background: #F3E5F5; color: #8E24AA; }
+.feature-badge.blue { background: #E3F2FD; color: #1E88E5; }
+.feature-item span:last-child { font-size: 20px; color: var(--text-secondary); line-height: 1.7; }
+.formula-block { background: #F5F5F5; border-radius: var(--radius); padding: 20px 24px; margin: 16px 0; text-align: center; border: 2px solid #E0E0E0; overflow-x: auto; }
+.formula-block katex { font-size: 1.8em; color: var(--text-primary); }
+.algorithm-card { background: white; border-radius: var(--radius); padding: 22px 24px; margin: 18px 0; border: 2px solid var(--border); box-shadow: var(--shadow); }
+.algorithm-card h4 { font-size: 22px; color: var(--color-indigo); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.algorithm-card p { font-size: 19px; color: var(--text-secondary); line-height: 1.8; }
+.algorithm-card ul { padding-left: 24px; margin-top: 10px; }
+.algorithm-card li { font-size: 19px; color: var(--text-secondary); line-height: 1.9; margin-bottom: 8px; }
+.image-single { background: white; border-radius: var(--radius); padding: 16px; border: 2px solid var(--border); text-align: center; margin: 16px 0; transition: var(--transition); }
+.image-single:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.image-single img { max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 12px; background: #F5F5F5; }
+.image-single .image-caption { font-size: 17px; color: var(--text-muted); margin-top: 10px; font-weight: 500; }
+.data-table { background: white; border-radius: var(--radius); padding: 16px; border: 2px solid var(--border); margin: 16px 0; overflow-x: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 18px; }
+.data-table th { background: linear-gradient(135deg, #E8EAF6, #C5CAE9); color: #3949AB; padding: 14px 16px; text-align: center; font-weight: 700; border: 1px solid #9FA8DA; }
+.data-table td { padding: 14px 16px; text-align: center; border: 1px solid var(--border); color: var(--text-secondary); }
+.data-table tr:nth-child(even) { background: #FAFAFA; }
+.data-table tr:hover { background: var(--bg-hover); }
+.data-table tr.highlight { background: linear-gradient(90deg, #FFF8E1, #FFECB3); font-weight: 700; }
+.data-table tr.highlight td { color: #E65100; }
+.data-table .port-header { background: linear-gradient(135deg, #1E88E5, #42A5F5) !important; color: white !important; }
+.table-caption { font-size: 17px; font-weight: 600; color: var(--color-indigo); text-align: center; margin-bottom: 12px; }
+/* Agent demo */
+.case-demo { background: linear-gradient(135deg, #E8EAF6 0%, #ffffff 70%); border-radius: var(--radius-lg); padding: 28px; margin-top: 24px; border: 2px solid rgba(57,73,171,0.2); }
+.case-demo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid rgba(57,73,171,0.1); }
+.case-demo-title { font-size: 21px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.case-demo-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); color: white; }
+.demo-progress-bar { height: 8px; background: linear-gradient(90deg, #ECEFF1, #E3EAF5); border-radius: 4px; margin-bottom: 16px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+.demo-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3949AB, #5C6BC0, #00ACC1, #43A047, #FFC107); background-size: 300% 100%; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); animation: progressGradient 3s linear infinite; }
+@keyframes progressGradient { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+.demo-main { display: flex; gap: 24px; margin-top: 16px; }
+.demo-agent-column { width: 220px; flex-shrink: 0; }
+.demo-content-column { flex: 1; min-width: 0; }
+.agent-character { background: linear-gradient(180deg, #F5F7FA 0%, #E8EAF6 100%); border: 2px solid #C5CAE9; border-radius: 24px; padding: 20px 16px; text-align: center; position: sticky; top: 80px; box-shadow: 0 4px 20px rgba(57,73,171,0.08); overflow: hidden; }
+.agent-avatar { width: 120px; height: 120px; margin: 0 auto 12px; animation: agentFloat 3s ease-in-out infinite; }
+@keyframes agentFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.agent-svg { width: 100%; height: 100%; }
+.agent-eye-blink { transform-origin: center; animation: blink 4s infinite; }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 94%, 98% { transform: scaleY(0.1); } }
+.agent-body { animation: bodyBreath 3s ease-in-out infinite; transform-origin: center bottom; }
+@keyframes bodyBreath { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.02); } }
+.agent-antenna { animation: antennaPulse 2s ease-in-out infinite; }
+@keyframes antennaPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+.agent-left-arm, .agent-right-arm { animation: armWave 4s ease-in-out infinite; transform-origin: top center; }
+@keyframes armWave { 0%, 90%, 100% { transform: rotate(0); } 93% { transform: rotate(-8deg); } 96% { transform: rotate(8deg); } }
+.agent-emotion { font-size: 28px; margin-bottom: 8px; display: block; transition: all 0.4s; animation: emotionPop 0.4s ease-out; }
+@keyframes emotionPop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
+.agent-name { font-size: 20px; font-weight: 700; color: #3949AB; margin-bottom: 4px; }
+.agent-role { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+.agent-bubble { background: white; border: 2px solid #C5CAE9; border-radius: 14px; padding: 12px 14px; font-size: 15px; line-height: 1.6; color: var(--text-secondary); position: relative; text-align: left; min-height: 72px; transition: all 0.3s; }
+.agent-bubble::before { content: ''; position: absolute; top: -7px; left: 20px; width: 12px; height: 12px; background: white; border-left: 2px solid #C5CAE9; border-top: 2px solid #C5CAE9; transform: rotate(45deg); }
+.typing-dots { display: none; }
+.typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #3949AB; animation: typingDot 1.4s infinite; display: inline-block; margin: 0 2px; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-8px); opacity: 1; } }
+.agent-status { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; background: #E8F5E9; color: #43A047; }
+.agent-status.working { background: #E8EAF6; color: #3949AB; }
+.agent-status.working::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #3949AB; animation: statusPulse 1s infinite; }
+@keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.steps-track { display: flex; align-items: center; gap: 0; margin-bottom: 14px; flex-wrap: nowrap; overflow-x: auto; }
+.step-chip { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 20px; background: white; border: 2px solid #ECEFF1; font-size: 15px; color: var(--text-muted); font-weight: 500; transition: all 0.4s; cursor: pointer; white-space: nowrap; }
+.step-chip:hover { border-color: #3949AB; color: #3949AB; }
+.step-chip.done { background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%); border-color: #9FA8DA; color: #5C6BC0; }
+.step-chip.active { background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); border-color: #3949AB; color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(57,73,171,0.3); transform: translateY(-2px); }
+.step-chip .chip-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.step-chip.active .chip-num { background: rgba(255,255,255,0.25); }
+.step-chip-connector { width: 16px; height: 2px; background: #ECEFF1; flex-shrink: 0; }
+.step-chip-connector.done { background: #9FA8DA; }
+.demo-step-label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); color: white; font-size: 16px; font-weight: 600; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(57,73,171,0.25); }
+.demo-step-label .step-num { background: rgba(255,255,255,0.25); padding: 1px 8px; border-radius: 10px; }
+.demo-content-panel { animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1); }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.demo-action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.demo-action-btn { padding: 10px 20px; border-radius: 20px; font-size: 17px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; display: flex; align-items: center; gap: 6px; }
+.demo-action-btn.primary { background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); color: white; box-shadow: 0 3px 10px rgba(57,73,171,0.3); }
+.demo-action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(57,73,171,0.4); }
+.demo-action-btn.ghost { background: white; color: #3949AB; border: 2px solid #9FA8DA; }
+.demo-action-btn.ghost:hover { background: #E8EAF6; }
+.demo-action-btn.accent { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); color: white; box-shadow: 0 3px 10px rgba(255,152,0,0.3); }
+.demo-action-btn.accent:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,152,0,0.4); }
+.calc-panel { background: white; border-radius: var(--radius); padding: 20px; border: 2px solid #C5CAE9; margin: 16px 0; box-shadow: 0 4px 16px rgba(57,73,171,0.06); }
+.calc-title { font-size: 16px; font-weight: 600; color: #3949AB; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.calc-title::before { content: ''; width: 4px; height: 18px; border-radius: 2px; background: linear-gradient(180deg, #3949AB, #00ACC1); }
+.calc-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 8px 12px; background: #F5F7FA; border-radius: 8px; font-size: 17px; font-family: 'Courier New', monospace; transition: all 0.3s; }
+.calc-row.highlight { background: linear-gradient(90deg, #FFF8E1, #FFECB3); border-left: 3px solid #FFC107; font-weight: 700; }
+.calc-row.highlight.red { background: linear-gradient(90deg, #FFEBEE, #FFCDD2); border-left-color: #E53935; }
+.calc-row .var { color: #3949AB; font-weight: 600; }
+.calc-row .val { color: #E65100; font-weight: 700; }
+.calc-row .val.blue { color: #1565C0; }
+.calc-row .val.green { color: #2E7D32; }
+/* TSP map */
+.tsp-map { background: white; border-radius: var(--radius); padding: 20px; border: 2px solid #9FA8DA; margin: 14px 0; }
+.tsp-map-svg { width: 100%; height: auto; max-height: 380px; }
+.port-node { transition: all 0.4s; cursor: pointer; }
+.port-node text { font-family: 'Microsoft YaHei', sans-serif; font-weight: 700; font-size: 14px; pointer-events: none; }
+.tsp-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; transition: all 0.5s; }
+.temp-bar-container { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+.temp-bar-label { font-size: 16px; font-weight: 600; color: var(--text-secondary); min-width: 100px; }
+.temp-bar-track { flex: 1; height: 26px; background: linear-gradient(90deg, #E3F2FD, #FFF3E0, #FFEBEE); border-radius: 13px; position: relative; overflow: hidden; border: 2px solid #E0E0E0; }
+.temp-bar-fill { height: 100%; border-radius: 11px; background: linear-gradient(90deg, #2196F3, #FF9800, #F44336); transition: width 0.6s; box-shadow: 0 0 10px rgba(244,67,54,0.3); }
+.temp-bar-value { font-size: 17px; font-weight: 700; color: #E65100; min-width: 90px; font-family: 'Courier New', monospace; }
+.metropolis-box { background: linear-gradient(135deg, #FFEBEE, #FFFFFF); border: 2px solid #EF9A9A; border-radius: 14px; padding: 16px 18px; margin: 14px 0; }
+.metropolis-title { font-size: 18px; font-weight: 700; color: #C62828; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.metropolis-text { font-size: 18px; color: var(--text-secondary); line-height: 1.7; }
+.path-list { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 12px 16px; background: #F5F7FA; border-radius: 12px; margin: 10px 0; border: 1px solid var(--border); }
+.path-node { padding: 6px 14px; border-radius: 10px; font-weight: 700; font-size: 17px; }
+.path-node.a { background: #E3F2FD; color: #1565C0; border: 2px solid #90CAF9; }
+.path-node.b { background: #E8EAF6; color: #3949AB; border: 2px solid #9FA8DA; }
+.path-node.c { background: #E0F7FA; color: #00838F; border: 2px solid #80DEEA; }
+.path-node.d { background: #E8F5E9; color: #2E7D32; border: 2px solid #A5D6A7; }
+.path-node.e { background: #FFF3E0; color: #E65100; border: 2px solid #FFCC80; }
+.path-arrow { color: #9E9E9E; font-size: 18px; font-weight: 700; }
+.path-distance { margin-left: auto; padding: 6px 14px; border-radius: 10px; background: linear-gradient(135deg, #FFC107, #FF9800); color: white; font-weight: 700; font-size: 17px; }
+.iter-stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+.iter-stat-item { background: white; border-radius: 12px; padding: 14px; text-align: center; border: 2px solid var(--border); transition: all 0.3s; }
+.iter-stat-item.flash { animation: statFlash 0.5s ease-out; }
+@keyframes statFlash { 0% { background: #FFF3E0; border-color: #FF9800; } 100% { background: white; border-color: var(--border); } }
+.iter-stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; }
+.iter-stat-value { font-size: 24px; font-weight: 700; color: var(--color-indigo); font-family: 'Courier New', monospace; }
+.iter-stat-value.red { color: #E53935; }
+.iter-stat-value.green { color: #43A047; }
+</style>
+</head>
+<body>
+<div class="main">
+    <div class="top-bar">
+        <h2>11.2 模拟退火算法</h2>
+        <div class="top-bar-right">
+            <span style="font-size:14px; color:var(--text-muted);">船舶往返路径优化</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <span class="status-dot"></span>
+                <span style="font-size:14px;color:var(--text-secondary);font-weight:500;">系统就绪</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- 11.2.1 案例问题说明 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#1E88E5;">
+                <h3>11.2 模拟退火算法</h3>
+                <p>基于概率的全局优化算法 · 应用于船舶往返路径最短规划</p>
+            </div>
+
+            <h3 class="subsection-title" style="border-color:#1E88E5;color:#1565C0;">11.2.1 案例问题说明</h3>
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>⚓</span>
+                </div>
+                <div class="card-content">
+                    <h4>问题1：港口往返路径最短规划</h4>
+                    <p>针对船舶海洋领域中船舶往返路径最短的需求，存在以下工程问题。</p>
+                    <p style="margin-top:10px;"><b>问题1：</b>现在有一艘作业船需要往返多个港口进行作业并且最终回到出发港口，港口之间的距离见表11-1。如何有效规划一艘作业船在多个港口之间的往返路径，确保所需行程最短？</p>
+                </div>
+            </div>
+
+            <div class="data-table">
+                <div class="table-caption">表11-1　港口之间的距离</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="port-header">港口</th>
+                            <th class="port-header">港口A</th>
+                            <th class="port-header">港口B</th>
+                            <th class="port-header">港口C</th>
+                            <th class="port-header">港口D</th>
+                            <th class="port-header">港口E</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="background:#E3F2FD;color:#1565C0;font-weight:700;">港口A</td><td>—</td><td>10</td><td>15</td><td>8</td><td>20</td></tr>
+                        <tr><td style="background:#E8EAF6;color:#3949AB;font-weight:700;">港口B</td><td>10</td><td>—</td><td>35</td><td>25</td><td>30</td></tr>
+                        <tr><td style="background:#E0F7FA;color:#00838F;font-weight:700;">港口C</td><td>15</td><td>35</td><td>—</td><td>18</td><td>28</td></tr>
+                        <tr><td style="background:#E8F5E9;color:#2E7D32;font-weight:700;">港口D</td><td>8</td><td>25</td><td>18</td><td>—</td><td>12</td></tr>
+                        <tr><td style="background:#FFF3E0;color:#E65100;font-weight:700;">港口E</td><td>20</td><td>30</td><td>28</td><td>12</td><td>—</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="feature-card card-orange">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2);">
+                    <span>🛰️</span>
+                </div>
+                <div class="card-content">
+                    <h4>问题2：复杂港口网络航行路线优化</h4>
+                    <p>在复杂的港口网络中，如何应用合适的算法来优化船舶的航行路线，降低运营成本和时间？</p>
+                    <p style="margin-top:10px;">可将上述工程问题拆解为以下数学问题。</p>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <span class="feature-badge blue">模型</span>
+                            <span><b>问题1：</b>构建一个求解船舶往返路径的数学模型，该模型以从出发港口启航为起始，目标是规划出一条能够确保船舶依次且仅经过每个港口一次，最终顺利返回起点的最短路径。此路径的求解需综合考虑港口间的航行距离、水文气象条件、航道限制等因素，通过数学建模与优化算法实现精准求解。</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge orange">算法</span>
+                            <span><b>问题2：</b>利用模拟退火算法，设定初始温度、降温速率及迭代次数，计算给定的港口距离矩阵，寻找能够实现最短往返路径的具体方案。模拟退火算法参数如下：初始温度为1000，降温速率为0.99，迭代次数为1000。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11.2.2 模拟退火算法 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#3949AB;">
+                <h3>11.2.2 模拟退火算法</h3>
+                <p>随机搜索方法 · 跳出局部最优 · 全局优化</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.2.2.1 随机搜索</h4>
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🎯</span> 朴素随机搜索算法</h4>
+                <p>模拟退火法是一种随机搜索方法。随机搜索方法有时也被称为概率搜索方法，是一种能够在优化问题的可行集中随机采样，逐步完成搜索的方法。</p>
+                <p style="margin-top:10px;">假定需要求解的优化问题为 $\min f(x)$ subject to $x\in S$。随机搜索方法的一个基本假设为从可行集中进行随机采样，利用随机数生成器生成随机的初始点，作为搜索的起点，检查生成的点是否满足问题的约束条件。如果点不满足约束条件，则舍弃该点，重新生成新的随机点。</p>
+                <p style="margin-top:10px;">将随机生成的点代入目标函数，计算该点的目标函数值。其中，目标函数是用于衡量解的优劣程度的函数，根据具体的优化问题来确定。如求最小值问题，目标函数值越小，代表该点对应的解越优。</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+                    <div style="background:linear-gradient(135deg,#E8F5E9,#FFFFFF);border:2px solid #A5D6A7;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#2E7D32;margin-bottom:8px;">✅ 算法步骤</div>
+                        <ol style="font-size:17px;color:var(--text-secondary);line-height:1.9;padding-left:22px;">
+                            <li>生成随机初始点，检查约束</li>
+                            <li>代入目标函数，计算函数值</li>
+                            <li>生成新随机点，若更优则替换</li>
+                            <li>满足终止条件，输出近似最优解</li>
+                        </ol>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#FFEBEE,#FFFFFF);border:2px solid #EF9A9A;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#C62828;margin-bottom:8px;">⚠️ 终止条件</div>
+                        <ul style="font-size:17px;color:var(--text-secondary);line-height:1.9;padding-left:22px;">
+                            <li>预设的搜索次数</li>
+                            <li>目标函数值变化小于阈值</li>
+                            <li>经过一定时间的搜索</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="margin-top:14px;">重复上述步骤，生成新的随机点，检查约束条件并计算其目标函数值。如果新点的目标函数值更优，则用新点替换之前的点；否则，保留原来的点。设置终止条件，当满足终止条件时，停止随机搜索过程。最终得到的保留下来的点即为优化问题的近似最优解。在讨论模拟退火法之前，上述的随机搜索算法，被称为<b>朴素随机搜索算法</b>。</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.2.2.2 模拟退火法</h4>
+            <div class="feature-card card-red">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFEBEE,#FFCDD2);">
+                    <span>🚫</span>
+                </div>
+                <div class="card-content">
+                    <h4>朴素随机搜索的局部极小点"卡住"问题</h4>
+                    <p>朴素随机搜索算法的主要问题是可能会在局部极小点附近"卡住"。这种现象容易理解：如 $x^*$ 是一个局部极小点，邻域 $V(x^*)$ 足够小，使得其中的点对应的目标函数值不会比 $f(x^*)$ 更小。这样，算法将会卡住，不会找到外部的点。为解决这一问题，需设计一种方法，使其能够跳出。</p>
+                    <div class="feature-list" style="margin-top:12px;">
+                        <div class="feature-item">
+                            <span class="feature-badge red">途径一</span>
+                            <span>使"邻域"足够大（收敛慢，搜索效率低）</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge orange">途径二</span>
+                            <span><b>接受恶化解机制：</b>使算法能够"爬出"局部极小点，初期以较大概率接受劣质解，随着迭代进行逐渐降低接受概率，跳出局部最优陷阱。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🔢</span> 模拟退火算法5步骤</h4>
+                <ol style="padding-left:28px;margin-top:8px;">
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:8px;">令 $k=0$，选定初始点 $x^{(0)}$。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:8px;">从 $V(x^{(k)})$ 中随机选定一个备选点 $z^{(k)}$。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:8px;">设计特别的硬币，使其在一次抛投中出现正面的概率为 $p_k$。抛一次该硬币，如果出现正面，令 $x^{(k+1)}=z^{(k)}$，否则令 $x^{(k+1)}=x^{(k)}$。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:8px;">如果满足停止规则，就停止迭代。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;">令 $k=k+1$，回到第2步。</li>
+                </ol>
+                <p style="margin-top:12px;font-size:18px;color:var(--text-muted);font-style:italic;">⚠️ 需要指出的是，第3步中的"抛硬币"的说法只是关于随机决策的一种形象化描述，不能按照字面意义进行理解。</p>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📌</span> 当前为止最好的点更新规则</h4>
+                <p>按照以下方式进行更新。</p>
+                <div class="formula-block">
+                    $$ x_{best}^{(k+1)} = \begin{cases} x_{best}^{(k)} & \text{if } f(x^{(k+1)}) \ge f(x_{best}^{(k)}) \\ x^{(k+1)} & \text{if } f(x^{(k+1)}) < f(x_{best}^{(k)}) \end{cases} $$
+                </div>
+                <p>通过持续追踪并更新当前为止最好的点，将模拟退火算法简单视为一个搜索过程，输出为当前为止最好的点。这种说法不仅适用于模拟退火法，同样适用于其他随机搜索方法。</p>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🔥</span> 接受概率（玻尔兹曼）</h4>
+                <p>模拟退火法与朴素随机搜索算法之间的最大区别在于步骤3。在这一步骤中，以一定的概率选择备选点作为下一次迭代点，即使这个备选点比当前的迭代点要差，这一概率被称为<b>接受概率</b>。常用的接受概率为</p>
+                <div class="formula-block">
+                    $$ p_k = \exp\left(-\frac{(f(z^{(k)}) - f(x^{(k)}))_+}{T_k}\right) $$
+                </div>
+                <p>其中，$\exp$ 表示指数函数；$T_k$ 构成一组正数序列，被称为<b>温度进度表或冷却进度表</b>。上述形式的接受概率是由玻尔兹曼提出的，使得模拟退火算法等价于Gibbs采样器。</p>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🎲</span> 劣质解接受概率分析</h4>
+                <p>注意，如果 $f(z^{(k)}) \le f(x^{(k)})$，那么 $p_k=1$，意味着接受新点，即下一个迭代点为 $z^{(k)}$。但是，如果 $f(z^{(k)}) > f(x^{(k)})$，则仍有一定概率使得接受，这一概率为</p>
+                <div class="formula-block">
+                    $$ p = \exp\left(-\frac{f(z^{(k)}) - f(x^{(k)})}{T_k}\right) $$
+                </div>
+                <div class="feature-list" style="margin-top:12px;">
+                    <div class="feature-item"><span class="feature-badge red">差异越大</span><span>$f(z^{(k)})$ 和 $f(x^{(k)})$ 之间的差异越大，采用 $z^{(k)}$ 作为下一个迭代点的可能性就越小</span></div>
+                    <div class="feature-item"><span class="feature-badge orange">温度越低</span><span>$T_k$ 越小，采用 $z^{(k)}$ 作为下一个迭代点的可能性就越小</span></div>
+                </div>
+                <p style="margin-top:10px;">通常的做法是令温度单调递减到0（表示冷却过程）。也就是说，随着迭代次数k的增加，算法陷入更差状态的概率越来越低。从直观上进行理解，一开始，希望能够在整个可行集内进行搜索，随着迭代的开展，搜索的范围应该集中到全局极小点的附近区域，而不是遍历整个可行集。</p>
+            </div>
+
+            <div class="feature-card card-amber">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFF8E1,#FFECB3);">
+                    <span>⚒️</span>
+                </div>
+                <div class="card-content">
+                    <h4>"退火"术语的由来（冶金领域类比）</h4>
+                    <p>"退火"这一术语源自冶金领域，是一项用于改善金属品质的成熟技术。其基本操作流程为：</p>
+                    <div class="feature-list" style="margin-top:12px;">
+                        <div class="feature-item">
+                            <span class="feature-badge orange">加热</span>
+                            <span>将金属加热至特定温度，使金属原子活跃度提升，脱离初始晶格位置，导致金属内能增加</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge cyan">冷却</span>
+                            <span>以可控的方式对金属进行冷却，原子逐渐恢复有序排列，金属内能随之减少</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge green">结果</span>
+                            <span>若冷却过程足够缓慢，最终金属内能将低于初始状态，从而优化金属晶体结构，减少晶格缺陷</span>
+                        </div>
+                    </div>
+                    <p style="margin-top:12px;">与之类似，模拟退火算法中的温度参数也需以可控的方式逐步递减，冷却过程同样要足够缓慢。温度参数 $T_k$ 随迭代次数k的变化遵循如下公式：</p>
+                    <div class="formula-block">
+                        $$ T_k = T_0 \cdot r^k $$
+                    </div>
+                    <p>其中，$T_0$ 为初始温度（本节参数1000），$r$ 为冷却速率（本节参数0.99），为常数，需要根据具体问题确定（$T_0$ 需要足够大，以保证算法能够跳出局部极小点附近的区域）。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🚢</span> 组合优化：旅行商问题（TSP）</h4>
+                <p>模拟退火法常用于求解组合优化问题。此类问题的可行集虽有限，但规模往往极大。著名的旅行商问题就是一个组合优化问题，最基本的旅行商问题，是在给定一组城市和各城市之间交通成本的前提下，确定最便宜的交通线路，能够从一个城市出发，游遍其他所有城市，且每个城市只能经过一次。</p>
+            </div>
+        </div>
+
+        <!-- 11.2.3 模拟退火算法与人工智能 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#00ACC1;">
+                <h3>11.2.3 模拟退火算法与人工智能</h3>
+                <p>基于概率的全局优化算法 · AI多领域应用</p>
+            </div>
+            <div class="feature-card card-cyan">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E0F7FA,#B2EBF2);">
+                    <span>🤖</span>
+                </div>
+                <div class="card-content">
+                    <h4>模拟退火算法在AI领域的应用</h4>
+                    <p>由此可见，模拟退火算法是一种基于概率的全局优化算法，在人工智能领域，应用于以下几个方面。</p>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px;">
+                        <div style="background:white;border:2px solid #80DEEA;border-radius:14px;padding:18px;">
+                            <div style="font-size:32px;margin-bottom:8px;">📦</div>
+                            <div style="font-size:20px;font-weight:700;color:#00838F;margin-bottom:8px;">（1）组合优化</div>
+                            <div style="font-size:17px;color:var(--text-secondary);line-height:1.7;">在装箱问题中，确定最佳的物品放置方式。</div>
+                        </div>
+                        <div style="background:white;border:2px solid #80DEEA;border-radius:14px;padding:18px;">
+                            <div style="font-size:32px;margin-bottom:8px;">🧠</div>
+                            <div style="font-size:20px;font-weight:700;color:#00838F;margin-bottom:8px;">（2）神经网络训练</div>
+                            <div style="font-size:17px;color:var(--text-secondary);line-height:1.7;">通过调整网络的权重值，帮助网络逐步逼近更好的性能，应用于全局搜索和优化神经网络的结构、参数等。</div>
+                        </div>
+                        <div style="background:white;border:2px solid #80DEEA;border-radius:14px;padding:18px;">
+                            <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
+                            <div style="font-size:20px;font-weight:700;color:#00838F;margin-bottom:8px;">（3）图像处理</div>
+                            <div style="font-size:17px;color:var(--text-secondary);line-height:1.7;">可用于图像增强、降噪和图像分割等任务，对图像进行优化，以获得更好的视觉效果，同时保持图像的特征和细节。</div>
+                        </div>
+                    </div>
+                    <p style="margin-top:18px;font-size:20px;color:var(--text-secondary);line-height:1.8;">总之，模拟退火算法在人工智能方面具有广泛的应用，完成参数调优、神经网络训练和图像处理等，其灵活性和鲁棒性使其成为求解复杂问题的有力工具。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11.2.4 解决与讨论 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#43A047;">
+                <h3>11.2.4 解决与讨论</h3>
+                <p>船舶港口路径优化 · 模拟退火算法求解</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.2.4.1 问题分析</h4>
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🔍</span> 针对案例问题的解决方法</h4>
+
+                <h4 class="subsection-title h4" style="border-color:#1E88E5;color:#1565C0;margin-top:10px;">1．确定解决方案</h4>
+                <p>定义一个初始解，即作业船依次访问港口的顺序。如选择初始解为 <b>A-B-C-D-E-A</b>。然后，从当前解开始，通过随机交换两个城市的位置，生成一个新的解。</p>
+
+                <h4 class="subsection-title h4" style="border-color:#FB8C00;color:#E65100;margin-top:20px;">2．计算过程</h4>
+                <p>计算新解对应的行程距离。如果新解的行程距离比当前解更短，那么接受新解。否则，根据一定的概率接受新解，即模拟退火的步骤。重复这个过程，直到达到停止条件（例如超过指定的迭代次数或足够低的温度）。</p>
+                <p style="margin-top:10px;">在每次迭代中，逐渐降低温度以控制接受较差解的概率，使算法在搜索空间中进行全局搜索和局部优化，得到近似最优解，表示最短路径的顺序。</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.2.4.2 问题解决</h4>
+            <div class="feature-card card-green">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
+                    <span>📋</span>
+                </div>
+                <div class="card-content">
+                    <h4>附录11-A</h4>
+                    <p>具体python代码见附录11-A。</p>
+                </div>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.2.4.3 模拟退火算法流程图</h4>
+            <p style="font-size:19px;color:var(--text-secondary);line-height:1.8;margin-bottom:10px;">模拟退火算法流程图如图11-1所示。</p>
+
+            <div class="image-single">
+                <img src="图/11-1.png" alt="图11-1 模拟退火算法流程图" style="max-height:780px;">
+                <div class="image-caption">图11-1 模拟退火算法流程图[1]</div>
+            </div>
+        </div>
+
+        <!-- 智能体交互演示 -->
+        <div class="case-demo">
+            <div class="case-demo-header">
+                <div class="case-demo-title">
+                    <div class="case-demo-icon">🤖</div>
+                    模拟退火算法 · 港口路径优化智能体演示
+                </div>
+                <div style="font-size:14px;color:var(--text-muted);">参数：T₀=1000 · r=0.99 · iter=1000 · 5个港口（A~E）</div>
+            </div>
+            <div class="demo-progress-bar">
+                <div class="demo-progress-fill" id="demoProgress" style="width:0%;"></div>
+            </div>
+            <div class="demo-main">
+                <!-- Agent 智能体 -->
+                <div class="demo-agent-column">
+                    <div class="agent-character">
+                        <span class="agent-emotion" id="agentEmotion">🧠</span>
+                        <div class="agent-avatar">
+                            <svg class="agent-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <g class="agent-body">
+                                    <circle cx="60" cy="45" r="28" fill="url(#headG)" stroke="#3949AB" stroke-width="2"/>
+                                    <defs><linearGradient id="headG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7986CB"/><stop offset="100%" stop-color="#3949AB"/></linearGradient></defs>
+                                    <ellipse cx="50" cy="45" rx="5" ry="6" fill="white"/>
+                                    <ellipse cx="70" cy="45" rx="5" ry="6" fill="white"/>
+                                    <circle class="agent-eye-blink" cx="50" cy="46" r="2.5" fill="#1A237E"/>
+                                    <circle class="agent-eye-blink" cx="70" cy="46" r="2.5" fill="#1A237E"/>
+                                    <path d="M53,56 Q60,61 67,56" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                                    <!-- 天线 -->
+                                    <line x1="60" y1="17" x2="60" y2="7" stroke="#3949AB" stroke-width="2.5"/>
+                                    <circle class="agent-antenna" cx="60" cy="5" r="3.5" fill="#FF5252" stroke="#D32F2F" stroke-width="1.5"/>
+                                    <!-- 耳朵 -->
+                                    <circle cx="32" cy="45" r="5" fill="#3949AB"/>
+                                    <circle cx="88" cy="45" r="5" fill="#3949AB"/>
+                                    <!-- 身体 -->
+                                    <rect x="38" y="72" width="44" height="38" rx="10" fill="url(#bodyG)" stroke="#3949AB" stroke-width="2"/>
+                                    <defs><linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5C6BC0"/><stop offset="100%" stop-color="#283593"/></linearGradient></defs>
+                                    <circle cx="50" cy="88" r="3" fill="#FFF176"/>
+                                    <circle cx="70" cy="88" r="3" fill="#81C784"/>
+                                    <rect x="54" y="95" width="12" height="8" rx="2" fill="#1A237E"/>
+                                    <!-- 手臂 -->
+                                    <g class="agent-left-arm"><rect x="22" y="75" width="16" height="26" rx="8" fill="#3949AB"/></g>
+                                    <g class="agent-right-arm"><rect x="82" y="75" width="16" height="26" rx="8" fill="#3949AB"/></g>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="agent-name">安小退</div>
+                        <div class="agent-role">模拟退火算法专家</div>
+                        <div class="agent-bubble" id="agentBubble">
+                            您好！我是小退。让我为您演示如何使用模拟退火算法为船舶规划最短港口往返路径。点击"开始演示"即可开始！
+                            <div class="typing-dots" id="typingDots"><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="agent-status" id="agentStatus">待命中</div>
+                    </div>
+                </div>
+
+                <!-- 演示内容 -->
+                <div class="demo-content-column">
+                    <div class="steps-track" id="stepsTrack"></div>
+                    <div id="demoStepLabel" class="demo-step-label"></div>
+                    <div id="demoContent" class="demo-content-panel"></div>
+                    <div class="demo-action-bar">
+                        <button class="demo-action-btn primary" onclick="startAutoDemo()" id="startBtn">▶ 开始演示</button>
+                        <button class="demo-action-btn ghost" onclick="resetDemo()">↺ 重置</button>
+                        <button class="demo-action-btn ghost" onclick="prevStep()">← 上一步</button>
+                        <button class="demo-action-btn accent" onclick="nextStep()">下一步 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ===== 港口距离矩阵 =====
+const PORT_NAMES = ['A','B','C','D','E'];
+const DIST = [
+    [0, 10, 15, 8, 20],
+    [10, 0, 35, 25, 30],
+    [15, 35, 0, 18, 28],
+    [8, 25, 18, 0, 12],
+    [20, 30, 28, 12, 0]
+];
+// 港口显示坐标（用于SVG地图）
+const PORT_COORDS = {
+    'A': {x:120,y:90},
+    'B': {x:260,y:60},
+    'C': {x:420,y:110},
+    'D': {x:200,y:260},
+    'E': {x:380,y:240}
+};
+const PORT_COLOR = {
+    'A':'#1E88E5','B':'#3949AB','C':'#00838F','D':'#43A047','E':'#FB8C00'
+};
+const PORT_CLASS = {
+    'A':'a','B':'b','C':'c','D':'d','E':'e'
+};
+
+// 计算路径总距离
+function pathDistance(path) {
+    let d = 0;
+    for (let i=0; i<path.length; i++) {
+        const a = PORT_NAMES.indexOf(path[i]);
+        const b = PORT_NAMES.indexOf(path[(i+1)%path.length]);
+        d += DIST[a][b];
+    }
+    return d;
+}
+
+// ===== 6个演示步骤 =====
+const STEPS = [
+    {
+        label: '初始化参数',
+        emotion: '⚙️',
+        bubble: '首先，我来设置模拟退火算法的初始参数。初始温度T₀=1000，降温速率r=0.99，最大迭代次数=1000。',
+        status: '初始化中',
+        render: function() {
+            return `
+                <div class="calc-panel">
+                    <div class="calc-title">📋 算法超参数设置</div>
+                    <div class="calc-row highlight"><span class="var">T₀ =</span> <span class="val">1000</span> <span style="color:var(--text-muted)">初始温度（足够大，便于跳出局部极小点）</span></div>
+                    <div class="calc-row"><span class="var">r  =</span> <span class="val">0.99</span> <span style="color:var(--text-muted)">降温速率（冷却进度表）</span></div>
+                    <div class="calc-row highlight"><span class="var">iter_max =</span> <span class="val">1000</span> <span style="color:var(--text-muted)">最大迭代次数</span></div>
+                    <div class="calc-row"><span class="var">ports  =</span> <span class="val blue">[A, B, C, D, E]</span> <span style="color:var(--text-muted)">5个港口，N! = 120种顺序组合</span></div>
+                </div>
+                <div class="iter-stat">
+                    <div class="iter-stat-item">
+                        <div class="iter-stat-label">初始温度</div>
+                        <div class="iter-stat-value red">1000 🔥</div>
+                    </div>
+                    <div class="iter-stat-item">
+                        <div class="iter-stat-label">迭代进度</div>
+                        <div class="iter-stat-value">0 / 1000</div>
+                    </div>
+                    <div class="iter-stat-item">
+                        <div class="iter-stat-label">状态</div>
+                        <div class="iter-stat-value green">就绪 ✓</div>
+                    </div>
+                </div>
+            `;
+        }
+    },
+    {
+        label: '初始路径',
+        emotion: '🚢',
+        bubble: '设置一个初始解，即作业船依次访问港口的顺序。这里选择 A-B-C-D-E-A，我们先计算一下这条初始路径的总距离。',
+        status: '计算初始解',
+        render: function() {
+            const path = ['A','B','C','D','E'];
+            const d = pathDistance(path);
+            const detail = ['A→B:10','B→C:35','C→D:18','D→E:12','E→A:20'];
+            return `
+                <div class="calc-panel">
+                    <div class="calc-title">🚢 初始解：A-B-C-D-E-A</div>
+                    <div class="path-list">
+                        ${path.map(p=>`<span class="path-node ${PORT_CLASS[p]}">${p}</span><span class="path-arrow">→</span>`).join('')}
+                        <span class="path-node ${PORT_CLASS['A']}">A</span>
+                        <span class="path-distance">Σ = ${d}</span>
+                    </div>
+                    ${detail.map(s=>`<div class="calc-row"><span class="var">${s.split(':')[0]}</span> <span class="val">${s.split(':')[1]}</span></div>`).join('')}
+                    <div class="calc-row highlight red"><span class="var">总距离 =</span> <span class="val">${d}</span> <span style="color:var(--text-muted)">（10+35+18+12+20 = ${d}）</span></div>
+                </div>
+                <div class="tsp-map">
+                    <div style="font-size:16px;font-weight:600;color:#3949AB;margin-bottom:10px;">🗺️ 初始路径可视化</div>
+                    <svg class="tsp-map-svg" viewBox="0 0 520 340">
+                        <defs><radialGradient id="seaBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#E3F2FD"/><stop offset="100%" stop-color="#BBDEFB"/></radialGradient></defs>
+                        <rect width="520" height="340" rx="12" fill="url(#seaBg)"/>
+                        <!-- 海域纹理 -->
+                        <path d="M40,320 Q90,300 140,320 T240,320 T340,320 T440,320 T520,320" fill="none" stroke="#90CAF9" stroke-width="1.5" opacity="0.6"/>
+                        <path d="M20,295 Q70,275 120,295 T220,295 T320,295 T420,295 T520,295" fill="none" stroke="#64B5F6" stroke-width="1" opacity="0.5"/>
+                        <!-- 路径 -->
+                        <polyline class="tsp-path" points="120,90 260,60 420,110 200,260 380,240 120,90" stroke="#FF9800" stroke-width="3.5" stroke-dasharray="8,4"/>
+                        <!-- 港口节点 -->
+                        ${PORT_NAMES.map(p=>{
+                            const c = PORT_COORDS[p];
+                            return `<g class="port-node">
+                                <circle cx="${c.x}" cy="${c.y}" r="24" fill="${PORT_COLOR[p]}" stroke="white" stroke-width="3" opacity="0.9"/>
+                                <text x="${c.x}" y="${c.y+5}" text-anchor="middle" fill="white" font-size="16">港口${p}</text>
+                                <circle cx="${c.x}" cy="${c.y}" r="28" fill="none" stroke="${PORT_COLOR[p]}" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            </g>`;
+                        }).join('')}
+                    </svg>
+                </div>
+            `;
+        }
+    },
+    {
+        label: '随机交换',
+        emotion: '🔀',
+        bubble: '接下来我随机交换两个港口的位置来生成新解。比如交换 B 和 E，得到新路径 A-E-C-D-B-A。让我比较新旧路径的距离！',
+        status: '生成邻居解',
+        render: function() {
+            const oldPath = ['A','B','C','D','E'];
+            const newPath = ['A','E','C','D','B'];
+            const dOld = pathDistance(oldPath);
+            const dNew = pathDistance(newPath);
+            const delta = dNew - dOld;
+            return `
+                <div class="calc-panel">
+                    <div class="calc-title">🔀 邻居解：随机交换两个港口位置（B ↔ E）</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div style="background:#F5F7FA;padding:12px;border-radius:10px;">
+                            <div style="font-size:15px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">当前解</div>
+                            <div class="path-list">
+                                ${oldPath.map(p=>`<span class="path-node ${PORT_CLASS[p]}">${p}</span><span class="path-arrow">→</span>`).join('')}
+                                <span class="path-node ${PORT_CLASS['A']}">A</span>
+                                <span class="path-distance">${dOld}</span>
+                            </div>
+                        </div>
+                        <div style="background:linear-gradient(135deg,#FFF3E0,#FFFFFF);padding:12px;border-radius:10px;border:2px solid #FFCC80;">
+                            <div style="font-size:15px;color:#E65100;font-weight:600;margin-bottom:6px;">✨ 新解（交换B/E）</div>
+                            <div class="path-list">
+                                ${newPath.map(p=>`<span class="path-node ${PORT_CLASS[p]}">${p}</span><span class="path-arrow">→</span>`).join('')}
+                                <span class="path-node ${PORT_CLASS['A']}">A</span>
+                                <span class="path-distance">${dNew}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="calc-row highlight ${delta<0?'':'red'}" style="margin-top:14px;">
+                        <span class="var">Δ = F(新解) − F(当前解) =</span>
+                        <span class="val">${dNew} − ${dOld} = ${delta}</span>
+                        <span style="color:var(--text-muted);font-style:italic;">
+                            ${delta<0 ? '✅ 新解更优！直接接受！' : '⚠️ 新解较差，需要通过 Metropolis 准则以一定概率接受'}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+    },
+    {
+        label: 'Metropolis接受',
+        emotion: '🎲',
+        bubble: '如果新解更差，就以 Metropolis 接受概率 p=exp(-Δ/T) 决定是否接受。现在 T=990，假设 Δ=+8，看看接受概率是多少？',
+        status: 'Metropolis判断',
+        render: function() {
+            const T = 1000 * Math.pow(0.99, 1); // ~990
+            const Delta = 8;
+            const p = Math.exp(-Delta / T);
+            return `
+                <div class="metropolis-box">
+                    <div class="metropolis-title">🎲 Metropolis 接受准则（当 Δ > 0 时）</div>
+                    <div class="formula-block" style="margin:10px 0;padding:14px;">
+                        $$ p = \\exp\\left(-\\frac{\\Delta}{T}\\right) = \\exp\\left(-\\frac{8}{990}\\right) \\approx ${p.toFixed(4)} $$
+                    </div>
+                    <div class="metropolis-text">抛一枚特殊硬币，正面概率为 <b style="color:#C62828">${(p*100).toFixed(2)}%</b>。如果正面则接受劣质解，否则拒绝。<br/>
+                    <span style="color:var(--text-muted);font-style:italic;">→ 接受劣质解是为了跳出局部最优陷阱，随着温度降低，接受概率会越来越小。</span></div>
+                </div>
+                <div class="temp-bar-container">
+                    <div class="temp-bar-label">🌡️ 当前温度</div>
+                    <div class="temp-bar-track"><div class="temp-bar-fill" style="width:${(T/1000*100).toFixed(1)}%;"></div></div>
+                    <div class="temp-bar-value">${T.toFixed(0)} K</div>
+                </div>
+                <div class="calc-panel">
+                    <div class="calc-title">🔥 温度进度表 Tₖ = T₀ · rᵏ</div>
+                    <div class="calc-row"><span class="var">k=0</span> → <span class="val red">T = 1000.00</span> <span style="color:var(--text-muted)">（高温：接受概率大，广域搜索）</span></div>
+                    <div class="calc-row"><span class="var">k=100</span> → <span class="val">T = ${(1000*Math.pow(0.99,100)).toFixed(1)}</span></div>
+                    <div class="calc-row"><span class="var">k=500</span> → <span class="val">T = ${(1000*Math.pow(0.99,500)).toFixed(2)}</span></div>
+                    <div class="calc-row highlight"><span class="var">k=1000</span> → <span class="val green">T = ${(1000*Math.pow(0.99,1000)).toFixed(4)}</span> <span style="color:var(--text-muted)">（低温：几乎不接受劣解，精细搜索）</span></div>
+                </div>
+            `;
+        }
+    },
+    {
+        label: '迭代降温',
+        emotion: '❄️',
+        bubble: '现在进行第300次迭代。每次迭代后温度乘以0.99进行冷却，算法由广域搜索逐渐转变为局部精细搜索。让我演示一下当前的搜索进度！',
+        status: '迭代降温中',
+        render: function() {
+            const k = 300;
+            const T = 1000 * Math.pow(0.99, k);
+            // 一条较好路径：A-B-E-D-C-A (86)... 实际最优: 
+            // 枚举最优路径：最短的组合是 A-D-E-C-B-A = 8+12+28+35+10 = 93
+            // A-B-E-D-C-A = 10+30+12+18+15 = 85 ✓ 更优
+            const bestPath = ['A','B','E','D','C'];
+            const bestD = pathDistance(bestPath);
+            const curPath = ['A','D','B','E','C'];
+            const curD = pathDistance(curPath);
+            return `
+                <div class="iter-stat">
+                    <div class="iter-stat-item flash">
+                        <div class="iter-stat-label">当前迭代 k</div>
+                        <div class="iter-stat-value">${k}</div>
+                    </div>
+                    <div class="iter-stat-item flash">
+                        <div class="iter-stat-label">当前温度</div>
+                        <div class="iter-stat-value red">${T.toFixed(2)} K</div>
+                    </div>
+                    <div class="iter-stat-item flash">
+                        <div class="iter-stat-label">当前最优距离</div>
+                        <div class="iter-stat-value green">${bestD}</div>
+                    </div>
+                </div>
+                <div class="temp-bar-container">
+                    <div class="temp-bar-label">🌡️ 冷却进度</div>
+                    <div class="temp-bar-track"><div class="temp-bar-fill" style="width:${(T/1000*100).toFixed(1)}%;"></div></div>
+                    <div class="temp-bar-value">${(T/10).toFixed(1)}%</div>
+                </div>
+                <div class="calc-panel">
+                    <div class="calc-title">🏆 当前最优解 vs 当前迭代解</div>
+                    <div class="path-list" style="background:linear-gradient(90deg,#E8F5E9,#FFFFFF);border-color:#A5D6A7;">
+                        <span style="font-size:16px;font-weight:700;color:#2E7D32;margin-right:8px;">✅ Best:</span>
+                        ${bestPath.map(p=>`<span class="path-node ${PORT_CLASS[p]}">${p}</span><span class="path-arrow">→</span>`).join('')}
+                        <span class="path-node ${PORT_CLASS['A']}">A</span>
+                        <span class="path-distance">Σ=${bestD}</span>
+                    </div>
+                    <div class="path-list">
+                        <span style="font-size:16px;font-weight:700;color:#1565C0;margin-right:8px;">🔄 Now:</span>
+                        ${curPath.map(p=>`<span class="path-node ${PORT_CLASS[p]}">${p}</span><span class="path-arrow">→</span>`).join('')}
+                        <span class="path-node ${PORT_CLASS['A']}">A</span>
+                        <span class="path-distance">Σ=${curD}</span>
+                    </div>
+                </div>
+                <div class="tsp-map">
+                    <div style="font-size:16px;font-weight:600;color:#2E7D32;margin-bottom:10px;">🏆 当前最优路径：A→B→E→D→C→A（距离 = ${bestD}）</div>
+                    <svg class="tsp-map-svg" viewBox="0 0 520 340">
+                        <defs>
+                            <radialGradient id="seaBg2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#E8F5E9"/><stop offset="100%" stop-color="#A5D6A7"/></radialGradient>
+                            <marker id="pathArrow2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2E7D32"/></marker>
+                        </defs>
+                        <rect width="520" height="340" rx="12" fill="url(#seaBg2)"/>
+                        <polyline class="tsp-path" points="120,90 260,60 380,240 200,260 420,110 120,90" stroke="#2E7D32" stroke-width="4" marker-mid="url(#pathArrow2)"/>
+                        ${PORT_NAMES.map(p=>{
+                            const c = PORT_COORDS[p];
+                            return `<g class="port-node">
+                                <circle cx="${c.x}" cy="${c.y}" r="22" fill="${PORT_COLOR[p]}" stroke="white" stroke-width="3"/>
+                                <text x="${c.x}" y="${c.y+5}" text-anchor="middle" fill="white" font-size="16">港口${p}</text>
+                            </g>`;
+                        }).join('')}
+                    </svg>
+                </div>
+            `;
+        }
+    },
+    {
+        label: '输出最优解',
+        emotion: '🎉',
+        bubble: '恭喜！迭代结束，达到最大迭代次数且温度足够低。最终得到的最优港口往返路径为：A-B-E-D-C-A，总距离仅 85，相比初始解（距离 95）优化了 10.5%！',
+        status: '演示完成',
+        render: function() {
+            const bestPath = ['A','B','E','D','C'];
+            const bestD = pathDistance(bestPath);
+            const initD = 95; // 初始A-B-C-D-E-A
+            const improvement = ((initD - bestD) / initD * 100).toFixed(1);
+            return `
+                <div style="background:linear-gradient(135deg,#FFF8E1 0%,#FFFFFF 50%,#E8F5E9 100%);border:3px solid #FFC107;border-radius:var(--radius);padding:24px;margin-bottom:16px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:38px;margin-bottom:6px;">🎉🏆🎉</div>
+                        <div style="font-size:24px;font-weight:700;color:#E65100;margin-bottom:8px;">模拟退火算法收敛 · 输出最优路径</div>
+                        <div style="font-size:17px;color:var(--text-secondary);">迭代次数: 1000 次 · 最终温度: ${(1000*Math.pow(0.99,1000)).toFixed(4)} K</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px;">
+                        <div style="background:white;border-radius:14px;padding:16px;text-align:center;border:2px solid #90CAF9;">
+                            <div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">初始解距离</div>
+                            <div style="font-size:30px;font-weight:700;color:#1565C0;font-family:'Courier New',monospace;">${initD}</div>
+                            <div style="font-size:13px;color:var(--text-muted);">A→B→C→D→E→A</div>
+                        </div>
+                        <div style="background:white;border-radius:14px;padding:16px;text-align:center;border:2px solid #66BB6A;">
+                            <div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">✅ 最优解距离</div>
+                            <div style="font-size:30px;font-weight:700;color:#2E7D32;font-family:'Courier New',monospace;">${bestD}</div>
+                            <div style="font-size:13px;color:var(--text-muted);">A→B→E→D→C→A</div>
+                        </div>
+                        <div style="background:linear-gradient(135deg,#FF9800,#F44336);border-radius:14px;padding:16px;text-align:center;color:white;">
+                            <div style="font-size:14px;font-weight:600;margin-bottom:6px;opacity:0.9;">🚀 距离优化率</div>
+                            <div style="font-size:30px;font-weight:700;font-family:'Courier New',monospace;">−${improvement}%</div>
+                            <div style="font-size:13px;opacity:0.9;">节省 ${initD-bestD} 单位行程</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="calc-panel">
+                    <div class="calc-title">🚢 最优路径明细</div>
+                    <div class="path-list" style="background:linear-gradient(90deg,#FFF8E1,#FFFFFF);border-color:#FFD54F;">
+                        <span style="font-size:16px;font-weight:700;color:#E65100;margin-right:8px;">🏆 最优:</span>
+                        ${bestPath.map(p=>`<span class="path-node ${PORT_CLASS[p]}">${p}</span><span class="path-arrow">→</span>`).join('')}
+                        <span class="path-node ${PORT_CLASS['A']}">A</span>
+                        <span class="path-distance">Σ=${bestD}</span>
+                    </div>
+                    <div class="calc-row"><span class="var">A→B</span> = <span class="val">10</span></div>
+                    <div class="calc-row"><span class="var">B→E</span> = <span class="val">30</span></div>
+                    <div class="calc-row"><span class="var">E→D</span> = <span class="val">12</span></div>
+                    <div class="calc-row"><span class="var">D→C</span> = <span class="val">18</span></div>
+                    <div class="calc-row"><span class="var">C→A</span> = <span class="val">15</span></div>
+                    <div class="calc-row highlight red"><span class="var">Total</span> = <span class="val">${bestD}</span> <span style="color:var(--text-muted)">作业船完成5港作业的最短往返行程</span></div>
+                </div>
+                <div style="text-align:center;padding:14px;background:linear-gradient(135deg,#E8F5E9,#FFFFFF);border-radius:var(--radius-sm);border:2px solid #A5D6A7;margin-top:14px;">
+                    <div style="font-size:17px;font-weight:700;color:#2E7D32;">🌊 模拟退火算法成功解决了船舶港口路径优化问题！</div>
+                    <div style="font-size:15px;color:var(--text-muted);margin-top:4px;">通过初期高温度广域搜索、低温精细局部优化，成功跳出局部最优陷阱</div>
+                </div>
+            `;
+        }
+    }
+];
+
+// ===== 演示控制 =====
+let currentStep = -1;
+let autoTimer = null;
+const STEP_COUNT = STEPS.length;
+
+function buildStepsTrack() {
+    const track = document.getElementById('stepsTrack');
+    let html = '';
+    for (let i=0; i<STEP_COUNT; i++) {
+        if (i>0) html += `<div class="step-chip-connector" id="conn-${i-1}"></div>`;
+        html += `<div class="step-chip" id="chip-${i}" onclick="goToStep(${i})">
+            <span class="chip-num">${i+1}</span>${STEPS[i].label}
+        </div>`;
+    }
+    track.innerHTML = html;
+}
+
+function updateStepUI() {
+    // progress
+    document.getElementById('demoProgress').style.width = ((currentStep+1)/STEP_COUNT*100)+'%';
+    // chips
+    for (let i=0; i<STEP_COUNT; i++) {
+        const chip = document.getElementById('chip-'+i);
+        chip.classList.remove('active','done');
+        if (i < currentStep) chip.classList.add('done');
+        else if (i === currentStep) chip.classList.add('active');
+        if (i>0) {
+            const conn = document.getElementById('conn-'+(i-1));
+            conn.classList.toggle('done', i-1 < currentStep);
+        }
+    }
+    // step label
+    const lbl = document.getElementById('demoStepLabel');
+    if (currentStep >= 0) {
+        lbl.innerHTML = `<span class="step-num">Step ${currentStep+1}/${STEP_COUNT}</span> ${STEPS[currentStep].label}`;
+    } else {
+        lbl.innerHTML = `<span class="step-num">准备中</span> 点击"开始演示"按钮启动模拟退火算法`;
+    }
+    // content
+    const content = document.getElementById('demoContent');
+    if (currentStep < 0) {
+        content.innerHTML = `
+            <div style="background:linear-gradient(135deg,#E8EAF6,#FFFFFF);border-radius:14px;padding:26px;border:2px dashed #9FA8DA;text-align:center;">
+                <div style="font-size:52px;margin-bottom:10px;">⚓🧠🚢</div>
+                <div style="font-size:22px;font-weight:700;color:#3949AB;margin-bottom:8px;">模拟退火 · 5港TSP智能演示</div>
+                <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;margin:12px auto;max-width:560px;">
+                    演示将按以下 6 个步骤进行算法讲解与可视化：<br/>
+                    <b>初始化参数 → 初始路径 → 随机交换 → Metropolis接受 → 迭代降温 → 最优解</b>
+                </div>
+                <div style="font-size:15px;color:var(--text-muted);">演示过程中可以随时点击"上一步/下一步"手动查看，或点击"开始演示"自动播放</div>
+            </div>
+        `;
+    } else {
+        content.innerHTML = STEPS[currentStep].render();
+        content.style.animation = 'none';
+        void content.offsetWidth;
+        content.style.animation = '';
+        if (window.renderMathInElement) {
+            renderMathInElement(content, {
+                delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+                throwOnError: false
+            });
+        }
+    }
+    // agent
+    if (currentStep >= 0) {
+        document.getElementById('agentEmotion').textContent = STEPS[currentStep].emotion;
+        typewriter(STEPS[currentStep].bubble);
+        const st = document.getElementById('agentStatus');
+        if (currentStep === STEP_COUNT-1) {
+            st.className = 'agent-status';
+            st.textContent = '✅ 完成';
+        } else {
+            st.className = 'agent-status working';
+            st.textContent = STEPS[currentStep].status;
+        }
+    }
+}
+
+function typewriter(text) {
+    const bubble = document.getElementById('agentBubble');
+    const dots = document.getElementById('typingDots');
+    let i = 0;
+    dots.style.display = 'inline-block';
+    bubble.textContent = '';
+    bubble.appendChild(dots);
+    clearInterval(window._tw);
+    window._tw = setInterval(()=>{
+        if (i >= text.length) {
+            clearInterval(window._tw);
+            dots.style.display = 'none';
+            return;
+        }
+        const t = text.slice(0, i+1);
+        bubble.textContent = t;
+        bubble.appendChild(dots);
+        i++;
+    }, 22);
+}
+
+function goToStep(idx) {
+    if (idx < -1 || idx >= STEP_COUNT) return;
+    currentStep = idx;
+    updateStepUI();
+}
+function nextStep() {
+    if (currentStep < STEP_COUNT-1) { goToStep(currentStep+1); return true; }
+    return false;
+}
+function prevStep() {
+    if (currentStep >= 0) goToStep(currentStep-1);
+}
+function resetDemo() {
+    stopAuto();
+    goToStep(-1);
+    document.getElementById('agentEmotion').textContent = '🧠';
+    document.getElementById('agentStatus').className = 'agent-status';
+    document.getElementById('agentStatus').textContent = '待命中';
+    document.getElementById('agentBubble').innerHTML = '您好！我是小退。让我为您演示如何使用模拟退火算法为船舶规划最短港口往返路径。点击"开始演示"即可开始！';
+    document.getElementById('startBtn').textContent = '▶ 开始演示';
+    document.getElementById('startBtn').className = 'demo-action-btn primary';
+}
+function startAutoDemo() {
+    if (autoTimer) { stopAuto(); return; }
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '⏸ 暂停演示';
+    btn.className = 'demo-action-btn accent';
+    if (currentStep >= STEP_COUNT-1) goToStep(-1);
+    const runOne = () => {
+        if (!nextStep()) { stopAuto(); }
+    };
+    setTimeout(runOne, 300);
+    autoTimer = setInterval(runOne, 4000);
+}
+function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '▶ 开始演示';
+    btn.className = 'demo-action-btn primary';
+}
+
+// init
+buildStepsTrack();
+updateStepUI();
+
+// KaTeX render
+document.addEventListener('DOMContentLoaded', function(){
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>11.4 遗传算法</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg-page: #F0F7FF; --bg-card: #ffffff; --bg-hover: #FFF3E0;
+    --text-primary: #2E3440; --text-secondary: #4C566A; --text-muted: #6B7280;
+    --border: #ECEFF1; --shadow: 0 2px 12px rgba(0,0,0,0.03);
+    --shadow-hover: 0 4px 20px rgba(0,0,0,0.05);
+    --radius: 16px; --radius-lg: 20px; --radius-sm: 10px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    --color-indigo: #3949AB; --color-indigo-bg: #E8EAF6;
+    --color-orange: #FB8C00; --color-orange-bg: #FFF3E0;
+    --color-green: #43A047; --color-green-bg: #E8F5E9;
+    --color-pink: #E91E63; --color-pink-bg: #FDEBEF;
+    --color-cyan: #00ACC1; --color-cyan-bg: #E0F7FA;
+    --color-blue: #1E88E5; --color-blue-bg: #E3F2FD;
+    --color-amber: #FF8F00; --color-amber-bg: #FFF8E1;
+    --color-red: #E53935; --color-red-bg: #FFEBEE;
+    --color-purple: #8E24AA; --color-purple-bg: #F3E5F5;
+    --color-teal: #00897B; --color-teal-bg: #E0F2F1;
+}
+body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; display: flex; flex-direction: column; }
+.top-bar { height: 60px; background: white; display: flex; align-items: center; padding: 0 28px; justify-content: space-between; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.top-bar h2 { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+.top-bar-right { display: flex; align-items: center; gap: 12px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.content-area { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg-page); max-width: 1200px; margin: 0 auto; width: 100%; }
+.content-section { display: block; animation: fadeIn 0.4s ease-out; margin-bottom: 40px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.section-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid var(--border); }
+.section-header h3 { font-size: 34px; font-weight: 600; color: var(--text-primary); }
+.section-header p { font-size: 20px; color: var(--text-secondary); margin-top: 8px; }
+.subsection-title { font-size: 26px; color: var(--color-indigo); margin-top: 28px; margin-bottom: 16px; padding-left: 14px; border-left: 5px solid var(--color-indigo); display: flex; align-items: center; gap: 10px; }
+.subsection-title.h4 { font-size: 22px; }
+.feature-card { background: var(--bg-card); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; display: flex; gap: 24px; border: 2px solid var(--border); transition: var(--transition); box-shadow: var(--shadow); }
+.feature-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.feature-card.card-indigo { background: linear-gradient(135deg, #E8EAF6 0%, #ffffff 50%); border: 2px solid #9FA8DA; }
+.feature-card.card-cyan { background: linear-gradient(135deg, #E0F7FA 0%, #ffffff 50%); border: 2px solid #80DEEA; }
+.feature-card.card-blue { background: linear-gradient(135deg, #E3F2FD 0%, #ffffff 50%); border: 2px solid #90CAF9; }
+.feature-card.card-green { background: linear-gradient(135deg, #E8F5E9 0%, #ffffff 50%); border: 2px solid #A5D6A7; }
+.feature-card.card-orange { background: linear-gradient(135deg, #FFF3E0 0%, #ffffff 50%); border: 2px solid #FFCC80; }
+.feature-card.card-amber { background: linear-gradient(135deg, #FFF8E1 0%, #ffffff 50%); border: 2px solid #FFE082; }
+.feature-card.card-pink { background: linear-gradient(135deg, #FDEBEF 0%, #ffffff 50%); border: 2px solid #F48FB1; }
+.feature-card.card-red { background: linear-gradient(135deg, #FFEBEE 0%, #ffffff 50%); border: 2px solid #EF9A9A; }
+.feature-card.card-purple { background: linear-gradient(135deg, #F3E5F5 0%, #ffffff 50%); border: 2px solid #CE93D8; }
+.feature-card.card-teal { background: linear-gradient(135deg, #E0F2F1 0%, #ffffff 50%); border: 2px solid #80CBC4; }
+.card-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; transition: transform 0.3s; }
+.feature-card:hover .card-icon { transform: scale(1.08); }
+.card-content { flex: 1; }
+.card-content h4 { font-size: 26px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.card-content p { font-size: 20px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 14px; }
+.feature-list { margin-top: 14px; }
+.feature-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 14px 18px; background: #ffffff; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: all 0.3s; }
+.feature-item:hover { background: var(--bg-hover); border-color: rgba(57,73,171,0.2); }
+.feature-badge { padding: 5px 12px; background: #E8EAF6; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; color: #3949AB; flex-shrink: 0; }
+.feature-badge.green { background: #E8F5E9; color: #43A047; }
+.feature-badge.orange { background: #FFF3E0; color: #FB8C00; }
+.feature-badge.cyan { background: #E0F7FA; color: #00ACC1; }
+.feature-badge.pink { background: #FDEBEF; color: #E91E63; }
+.feature-badge.red { background: #FFEBEE; color: #E53935; }
+.feature-badge.purple { background: #F3E5F5; color: #8E24AA; }
+.feature-badge.blue { background: #E3F2FD; color: #1E88E5; }
+.feature-badge.teal { background: #E0F2F1; color: #00897B; }
+.feature-item span:last-child { font-size: 20px; color: var(--text-secondary); line-height: 1.7; }
+.formula-block { background: #F5F5F5; border-radius: var(--radius); padding: 20px 24px; margin: 16px 0; text-align: center; border: 2px solid #E0E0E0; overflow-x: auto; }
+.formula-block katex { font-size: 1.8em; color: var(--text-primary); }
+.algorithm-card { background: white; border-radius: var(--radius); padding: 22px 24px; margin: 18px 0; border: 2px solid var(--border); box-shadow: var(--shadow); }
+.algorithm-card h4 { font-size: 22px; color: var(--color-indigo); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.algorithm-card p { font-size: 19px; color: var(--text-secondary); line-height: 1.8; }
+.algorithm-card ul { padding-left: 24px; margin-top: 10px; }
+.algorithm-card li { font-size: 19px; color: var(--text-secondary); line-height: 1.9; margin-bottom: 8px; }
+.data-table { background: white; border-radius: var(--radius); padding: 16px; border: 2px solid var(--border); margin: 16px 0; overflow-x: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 18px; }
+.data-table th { background: linear-gradient(135deg, #E8EAF6, #C5CAE9); color: #3949AB; padding: 14px 16px; text-align: center; font-weight: 700; border: 1px solid #9FA8DA; }
+.data-table td { padding: 14px 16px; text-align: center; border: 1px solid var(--border); color: var(--text-secondary); }
+.data-table tr:nth-child(even) { background: #FAFAFA; }
+.data-table tr:hover { background: var(--bg-hover); }
+.data-table tr.highlight { background: linear-gradient(90deg, #FFF8E1, #FFECB3); font-weight: 700; }
+.data-table tr.highlight td { color: #E65100; }
+.table-caption { font-size: 17px; font-weight: 600; color: var(--color-indigo); text-align: center; margin-bottom: 12px; }
+.calc-panel { background: white; border-radius: var(--radius); padding: 20px; border: 2px solid #C5CAE9; margin: 16px 0; box-shadow: 0 4px 16px rgba(57,73,171,0.06); }
+.calc-title { font-size: 16px; font-weight: 600; color: #3949AB; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.calc-title::before { content: ''; width: 4px; height: 18px; border-radius: 2px; background: linear-gradient(180deg, #3949AB, #00ACC1); }
+.calc-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 8px 12px; background: #F5F7FA; border-radius: 8px; font-size: 17px; font-family: 'Courier New', monospace; transition: all 0.3s; }
+.calc-row.highlight { background: linear-gradient(90deg, #FFF8E1, #FFECB3); border-left: 3px solid #FFC107; font-weight: 700; }
+.calc-row .var { color: #3949AB; font-weight: 600; }
+.calc-row .val { color: #E65100; font-weight: 700; }
+.calc-row .val.blue { color: #1565C0; }
+.calc-row .val.green { color: #2E7D32; }
+.calc-row .val.red { color: #C62828; }
+/* Agent demo */
+.case-demo { background: linear-gradient(135deg, #F3E5F5 0%, #ffffff 70%); border-radius: var(--radius-lg); padding: 28px; margin-top: 24px; border: 2px solid rgba(142,36,170,0.2); }
+.case-demo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid rgba(142,36,170,0.1); }
+.case-demo-title { font-size: 21px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.case-demo-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: linear-gradient(135deg, #8E24AA 0%, #BA68C8 100%); color: white; }
+.demo-progress-bar { height: 8px; background: linear-gradient(90deg, #ECEFF1, #F3E5F5); border-radius: 4px; margin-bottom: 16px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+.demo-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8E24AA, #BA68C8, #00ACC1, #43A047, #FFC107); background-size: 300% 100%; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); animation: progressGradient 3s linear infinite; }
+@keyframes progressGradient { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+.demo-main { display: flex; gap: 24px; margin-top: 16px; }
+.demo-agent-column { width: 220px; flex-shrink: 0; }
+.demo-content-column { flex: 1; min-width: 0; }
+.agent-character { background: linear-gradient(180deg, #F5F7FA 0%, #F3E5F5 100%); border: 2px solid #CE93D8; border-radius: 24px; padding: 20px 16px; text-align: center; position: sticky; top: 80px; box-shadow: 0 4px 20px rgba(142,36,170,0.08); overflow: hidden; }
+.agent-avatar { width: 120px; height: 120px; margin: 0 auto 12px; animation: agentFloat 3s ease-in-out infinite; }
+@keyframes agentFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.agent-svg { width: 100%; height: 100%; }
+.agent-eye-blink { transform-origin: center; animation: blink 4s infinite; }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 94%, 98% { transform: scaleY(0.1); } }
+.agent-body { animation: bodyBreath 3s ease-in-out infinite; transform-origin: center bottom; }
+@keyframes bodyBreath { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.02); } }
+.agent-antenna { animation: antennaPulse 2s ease-in-out infinite; }
+@keyframes antennaPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+.agent-left-arm, .agent-right-arm { animation: armWave 4s ease-in-out infinite; transform-origin: top center; }
+@keyframes armWave { 0%, 90%, 100% { transform: rotate(0); } 93% { transform: rotate(-8deg); } 96% { transform: rotate(8deg); } }
+.agent-emotion { font-size: 28px; margin-bottom: 8px; display: block; transition: all 0.4s; animation: emotionPop 0.4s ease-out; }
+@keyframes emotionPop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
+.agent-name { font-size: 20px; font-weight: 700; color: #8E24AA; margin-bottom: 4px; }
+.agent-role { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+.agent-bubble { background: white; border: 2px solid #CE93D8; border-radius: 14px; padding: 12px 14px; font-size: 15px; line-height: 1.6; color: var(--text-secondary); position: relative; text-align: left; min-height: 72px; transition: all 0.3s; }
+.agent-bubble::before { content: ''; position: absolute; top: -7px; left: 20px; width: 12px; height: 12px; background: white; border-left: 2px solid #CE93D8; border-top: 2px solid #CE93D8; transform: rotate(45deg); }
+.typing-dots { display: none; }
+.typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #8E24AA; animation: typingDot 1.4s infinite; display: inline-block; margin: 0 2px; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-8px); opacity: 1; } }
+.agent-status { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; background: #E8F5E9; color: #43A047; }
+.agent-status.working { background: #F3E5F5; color: #8E24AA; }
+.agent-status.working::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #8E24AA; animation: statusPulse 1s infinite; }
+@keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.steps-track { display: flex; align-items: center; gap: 0; margin-bottom: 14px; flex-wrap: nowrap; overflow-x: auto; }
+.step-chip { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 20px; background: white; border: 2px solid #ECEFF1; font-size: 15px; color: var(--text-muted); font-weight: 500; transition: all 0.4s; cursor: pointer; white-space: nowrap; }
+.step-chip:hover { border-color: #8E24AA; color: #8E24AA; }
+.step-chip.done { background: linear-gradient(135deg, #F3E5F5 0%, #CE93D8 100%); border-color: #BA68C8; color: #6A1B9A; }
+.step-chip.active { background: linear-gradient(135deg, #8E24AA 0%, #BA68C8 100%); border-color: #8E24AA; color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(142,36,170,0.3); transform: translateY(-2px); }
+.step-chip .chip-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.step-chip.active .chip-num { background: rgba(255,255,255,0.25); }
+.step-chip-connector { width: 16px; height: 2px; background: #ECEFF1; flex-shrink: 0; }
+.step-chip-connector.done { background: #CE93D8; }
+.demo-step-label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: linear-gradient(135deg, #8E24AA 0%, #BA68C8 100%); color: white; font-size: 16px; font-weight: 600; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(142,36,170,0.25); }
+.demo-step-label .step-num { background: rgba(255,255,255,0.25); padding: 1px 8px; border-radius: 10px; }
+.demo-content-panel { animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1); }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.demo-action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.demo-action-btn { padding: 10px 20px; border-radius: 20px; font-size: 17px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; display: flex; align-items: center; gap: 6px; }
+.demo-action-btn.primary { background: linear-gradient(135deg, #8E24AA 0%, #BA68C8 100%); color: white; box-shadow: 0 3px 10px rgba(142,36,170,0.3); }
+.demo-action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(142,36,170,0.4); }
+.demo-action-btn.ghost { background: white; color: #8E24AA; border: 2px solid #CE93D8; }
+.demo-action-btn.ghost:hover { background: #F3E5F5; }
+.demo-action-btn.accent { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); color: white; box-shadow: 0 3px 10px rgba(255,152,0,0.3); }
+.demo-action-btn.accent:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,152,0,0.4); }
+/* GA specific */
+.chromosome { display: flex; gap: 4px; margin: 8px 0; justify-content: center; flex-wrap: wrap; }
+.gene { width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; border-radius: 6px; font-family: 'Courier New', monospace; transition: all 0.3s; }
+.gene.one { background: linear-gradient(135deg, #81C784, #43A047); color: white; box-shadow: 0 2px 6px rgba(67,160,71,0.3); }
+.gene.zero { background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: #616161; }
+.gene.crossover { animation: crossoverFlash 0.6s ease-in-out; }
+@keyframes crossoverFlash { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); background: linear-gradient(135deg, #FFD54F, #FFA726); } }
+.gene.mutation { animation: mutationFlash 0.8s ease-in-out; }
+@keyframes mutationFlash { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.4) rotate(180deg); background: linear-gradient(135deg, #F48FB1, #EC407A); color: white; } }
+.gene-label { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+.gene-wrapper { display: flex; flex-direction: column; align-items: center; }
+.population-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 14px 0; }
+.individual-card { background: white; border-radius: 10px; padding: 10px; border: 2px solid var(--border); transition: all 0.3s; }
+.individual-card:hover { border-color: #CE93D8; }
+.individual-card.selected { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border-color: #8E24AA; box-shadow: 0 3px 10px rgba(142,36,170,0.2); }
+.individual-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.individual-id { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.individual-fitness { font-size: 15px; font-weight: 700; color: #E65100; }
+.individual-chromosome { display: flex; gap: 2px; justify-content: center; }
+.individual-chromosome .gene { width: 22px; height: 28px; font-size: 14px; border-radius: 4px; }
+.convergence-chart { background: white; border-radius: var(--radius); padding: 16px; border: 2px solid #BA68C8; margin: 14px 0; }
+.conv-svg { width: 100%; height: auto; max-height: 220px; }
+.goods-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 14px 0; }
+.goods-item { background: white; border-radius: 12px; padding: 14px 10px; text-align: center; border: 2px solid var(--border); transition: all 0.3s; cursor: pointer; }
+.goods-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.goods-item.selected { background: linear-gradient(135deg, #C8E6C9, #A5D6A7); border-color: #43A047; box-shadow: 0 4px 12px rgba(67,160,71,0.25); }
+.goods-item.excluded { opacity: 0.4; background: #F5F5F5; }
+.goods-icon { font-size: 26px; margin-bottom: 4px; }
+.goods-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.goods-info { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+.goods-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+.goods-tag.in { background: #E8F5E9; color: #2E7D32; }
+.goods-tag.out { background: #FFEBEE; color: #C62828; }
+.weight-bar { height: 14px; background: #ECEFF1; border-radius: 7px; overflow: hidden; margin: 12px 0; border: 1px solid #E0E0E0; }
+.weight-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #66BB6A, #A5D6A7); transition: width 0.6s; position: relative; }
+.weight-bar-fill.over { background: linear-gradient(90deg, #EF5350, #E57373); }
+.weight-bar-label { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+.ga-param-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+.ga-param-card { background: white; border-radius: 12px; padding: 14px; border: 2px solid var(--border); text-align: center; }
+.ga-param-value { font-size: 26px; font-weight: 700; color: #8E24AA; font-family: 'Courier New', monospace; }
+.ga-param-label { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+.ga-param-value.orange { color: #E65100; }
+.ga-param-value.green { color: #2E7D32; }
+.ga-param-value.cyan { color: #00838F; }
+.ga-param-value.purple { color: #6A1B9A; }
+.crossover-svg { width: 100%; max-width: 500px; margin: 10px auto; display: block; }
+.pedigree-svg { width: 100%; max-width: 400px; margin: 10px auto; display: block; }
+.generation-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; background: linear-gradient(135deg, #8E24AA, #BA68C8); color: white; font-size: 14px; font-weight: 700; margin: 6px; }
+.selection-visual { display: flex; justify-content: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+.selection-wheel { width: 180px; height: 180px; }
+</style>
+</head>
+<body>
+<div class="main">
+    <div class="top-bar">
+        <h2>11.4 遗传算法</h2>
+        <div class="top-bar-right">
+            <span style="font-size:14px; color:var(--text-muted);">物流货物装载优化</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <span class="status-dot"></span>
+                <span style="font-size:14px;color:var(--text-secondary);font-weight:500;">系统就绪</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- 11.4.1 问题案例说明 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#8E24AA;">
+                <h3>11.4 遗传算法</h3>
+                <p>模拟自然选择进化过程的全局优化算法 · 应用于物流货物装载</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#8E24AA;color:#6A1B9A;">11.4.1 问题案例说明</h4>
+            <div class="feature-card card-purple">
+                <div class="card-icon" style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7);">
+                    <span>🧬</span>
+                </div>
+                <div class="card-content">
+                    <h4>物流货物装载优化问题</h4>
+                    <p>针对物流领域需求，面临以下装载优化难题。</p>
+                    <div class="feature-list" style="margin-top:12px;">
+                        <div class="feature-item">
+                            <span class="feature-badge purple">问题1</span>
+                            <span>面对一系列具有不同价值、重量和体积的货物，如何在运输车辆有限的载重能力和容积约束下，挑选出合适的货物进行装载，确保车上货物总价值达到最大化？</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge orange">问题2</span>
+                            <span>如何巧妙地应用遗传算法，针对上述问题进行高效求解，找出最优的货物装载组合方案？</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🧮</span> 数学问题建模</h4>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-badge purple">建模</span>
+                        <span><b>（1）</b>定义目标函数为货物总价值的最大化，同时限制条件为装载货物的总重量和总体积不超过车辆的载重能力和容积。</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-badge green">算法</span>
+                        <span><b>（2）</b>设定遗传算法的参数，包括种群规模、最大迭代次数、交叉概率和变异概率，以确保算法的高效运行并寻求最优解。货物详细信息见表11-3。</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-table">
+                <div class="table-caption">表11-3　货物详细信息表</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>货物编号</th>
+                            <th>1</th>
+                            <th>2</th>
+                            <th>3</th>
+                            <th>4</th>
+                            <th>5</th>
+                            <th>6</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="background:#F3E5F5;color:#6A1B9A;font-weight:700;">重量（kg）</td><td>20</td><td>15</td><td>10</td><td>30</td><td>25</td><td>12</td></tr>
+                        <tr><td style="background:#F3E5F5;color:#6A1B9A;font-weight:700;">体积（m³）</td><td>0.5</td><td>0.3</td><td>0.2</td><td>0.6</td><td>0.5</td><td>0.2</td></tr>
+                        <tr><td style="background:#F3E5F5;color:#6A1B9A;font-weight:700;">价值（元）</td><td>100</td><td>80</td><td>50</td><td>120</td><td>90</td><td>60</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>🎯</span>
+                </div>
+                <div class="card-content">
+                    <h4>遗传算法参数设置</h4>
+                    <p>遗传算法的相关参数设置如下：</p>
+                    <div class="ga-param-grid">
+                        <div class="ga-param-card"><div class="ga-param-value">50</div><div class="ga-param-label">种群规模</div></div>
+                        <div class="ga-param-card"><div class="ga-param-value" style="color:#00838F;">100</div><div class="ga-param-label">最大迭代次数</div></div>
+                        <div class="ga-param-card"><div class="ga-param-value orange">0.8</div><div class="ga-param-label">交叉概率 pc</div></div>
+                        <div class="ga-param-card"><div class="ga-param-value green">0.01</div><div class="ga-param-label">变异概率 pm</div></div>
+                        <div class="ga-param-card"><div class="ga-param-value cyan">60</div><div class="ga-param-label">载重限额(kg)</div></div>
+                        <div class="ga-param-card"><div class="ga-param-value purple">1.5</div><div class="ga-param-label">容积限额(m³)</div></div>
+                    </div>
+                    <p style="font-size:18px;margin-top:10px;">载重限额设置为60kg，容积限额为1.5m³，这两个参数与算法所处理的具体问题情境相关，用于约束相关资源的承载量。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11.4.2 遗传算法概念与理解 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#3949AB;">
+                <h3>11.4.2 遗传算法概念与理解</h3>
+                <p>自然选择进化模拟 · 编码→选择→交叉→变异</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.4.2.1 算法概念</h4>
+            <div class="algorithm-card">
+                <p style="font-size:20px;color:var(--text-secondary);line-height:2;"><strong>遗传算法（Genetic Algorithm，GA）</strong>是一种启发式搜索算法，其灵感来源于生物进化过程中的自然选择和遗传机制。</p>
+                <p style="font-size:20px;color:var(--text-secondary);line-height:2;margin-top:8px;">在自然界中，适应环境的个体更有可能生存并繁殖，将其有利的遗传特性传递给后代。遗传算法借鉴这一原理，模拟自然选择的过程来优化问题解。</p>
+                <div style="margin-top:14px;padding:14px 20px;background:linear-gradient(135deg,#E8EAF6,#FFFFFF);border-left:5px solid #3949AB;border-radius:12px;">
+                    <div style="font-size:19px;color:var(--text-secondary);line-height:2;"><strong style="color:#283593;">遗传特性：</strong>生物的遗传特性通过基因传递给后代。遗传算法中，问题的潜在解被编码成类似基因的串（<strong>染色体</strong>），通过算法操作传递给下一代。</div>
+                </div>
+                <div style="margin-top:10px;padding:14px 20px;background:linear-gradient(135deg,#E8F5E9,#FFFFFF);border-left:5px solid #2E7D32;border-radius:12px;">
+                    <div style="font-size:19px;color:var(--text-secondary);line-height:2;"><strong style="color:#1B5E20;">适应度（Fitness）：</strong>适应度是一个度量标准，用于评估解的好坏。在遗传算法中，适应度函数用于评价每个个体的性能，决定哪些个体将参与繁殖。</div>
+                </div>
+                <div style="margin-top:10px;padding:14px 20px;background:linear-gradient(135deg,#E0F7FA,#FFFFFF);border-left:5px solid #00838F;border-radius:12px;">
+                    <div style="font-size:19px;color:var(--text-secondary);line-height:2;"><strong style="color:#006064;">染色体（Chromosome）：</strong>染色体是遗传算法中的一个基本单位，代表一个解的编码形式。通常，染色体是一串符号，如二进制数、实数或其他形式的编码。</div>
+                </div>
+                <div style="margin-top:10px;padding:14px 20px;background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border-left:5px solid #EF6C00;border-radius:12px;">
+                    <div style="font-size:19px;color:var(--text-secondary);line-height:2;"><strong style="color:#E65100;">种群（Population）：</strong>种群是一组个体的集合，种群中的个体代表搜索空间中的一个子集。遗传算法在种群中迭代搜索最优解。</div>
+                </div>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.4.2.2 遗传算法模型</h4>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🧩</span> 1．算法模型</h4>
+                <div style="margin-top:12px;padding-left:8px;">
+                    <div style="margin-bottom:18px;padding:14px 18px;background:#FAFAFA;border-left:5px solid #283593;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#283593;margin-bottom:8px;">（1）编码（Encoding）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">个体 $g_i(t)$ 可以被编码为一个长度为 $L$ 的向量，即</p>
+                        <div class="formula-block">
+                            $$ g_i(t) = [g_{i1}(t), g_{i2}(t), \cdots, g_{iL}(t)] $$
+                        </div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">其中，$g_{ij}(t)$ 是个体 $i$ 在位置 $j$ 的基因。</p>
+                    </div>
+
+                    <div style="margin-bottom:18px;padding:14px 18px;background:#FAFAFA;border-left:5px solid #00838F;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#006064;margin-bottom:8px;">（2）初始化（Initialization）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">随机生成初始种群 $P(0)$，即</p>
+                        <div class="formula-block">
+                            $$ P(0) = \{g_1(0), g_2(0), \cdots, g_N(0)\} $$
+                        </div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">其中，每个个体 $g_i(0)$ 是通过随机方法生成的。</p>
+                    </div>
+
+                    <div style="margin-bottom:18px;padding:14px 18px;background:#FAFAFA;border-left:5px solid #1B5E20;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#1B5E20;margin-bottom:8px;">（3）适应度评估（Fitness Evaluation）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">对于每个个体 $g_i(t)$，计算其适应度 $f(g_i(t))$，即</p>
+                        <div class="formula-block">
+                            $$ f: G \rightarrow \mathbf{R} $$
+                            $$ f(g_i(t)) = \text{适应度值} $$
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:18px;padding:14px 18px;background:#FAFAFA;border-left:5px solid #EF6C00;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#E65100;margin-bottom:8px;">（4）选择（Selection）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">使用某种选择方法（如轮盘赌）来选择父代个体进行繁殖，即</p>
+                        <div class="formula-block">
+                            $$ S: P(t) \times \mathbf{R}^N \rightarrow P'(t) $$
+                        </div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">其中，$P'(t)$ 是选择后的父代种群。</p>
+                    </div>
+
+                    <div style="margin-bottom:18px;padding:14px 18px;background:#FAFAFA;border-left:5px solid #6A1B9A;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#6A1B9A;margin-bottom:8px;">（5）交叉（Crossover）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">对选择的父代个体执行交叉操作，生成新一代个体，即</p>
+                        <div class="formula-block">
+                            $$ C: P'(t) \rightarrow P''(t) $$
+                        </div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;margin-top:8px;">对于每一对父代个体 $g_p(t)$ 和 $g_q(t)$，以概率 $p_c$ 进行交叉，即</p>
+                        <div class="formula-block">
+                            $$ g'_p(t+1), g'_q(t+1) = C(g_p(t), g_q(t)) $$
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:18px;padding:14px 18px;background:#FAFAFA;border-left:5px solid #BF360C;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#BF360C;margin-bottom:8px;">（6）替换（Replacement）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">用新一代种群 $P''(t+1)$ 替代当前种群 $P(t)$，即</p>
+                        <div class="formula-block">
+                            $$ \boxed{P(t+1) = P''(t+1)} $$
+                        </div>
+                    </div>
+
+                    <div style="padding:14px 18px;background:#FAFAFA;border-left:5px solid #C62828;border-radius:10px;">
+                        <div style="font-size:20px;font-weight:700;color:#C62828;margin-bottom:8px;">（7）终止条件（Termination Condition）</div>
+                        <p style="font-size:20px;color:var(--text-secondary);line-height:1.9;">算法满足以下任意条件时停止，即</p>
+                        <div class="formula-block">
+                            $$ T = \bigl\{t = t_{\max} \;\text{或}\; \max(f(g_1(t)), \cdots, f(g_N(t))) \geqslant f_{\text{threshold}}\bigr\} $$
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🔄</span> 2．算法流程</h4>
+                <ol style="padding-left:28px;margin-top:10px;">
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;margin-bottom:10px;">初始化种群 $P(0)$。</li>
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;margin-bottom:10px;">评估种群 $P(t)$ 的适应度 $f(g_i(t))$。</li>
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;margin-bottom:10px;">选择父代种群 $P'(t)$。</li>
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;margin-bottom:10px;">对 $P'(t)$ 执行交叉操作得到 $P''(t)$。</li>
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;margin-bottom:10px;">对 $P''(t)$ 执行变异操作得到 $P'''(t)$。</li>
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;margin-bottom:10px;">替换种群 $P(t+1) = P'''(t)$。</li>
+                    <li style="font-size:20px;color:var(--text-secondary);line-height:2;">如果 $T$ 不满足，则 $t=t+1$ 并返回步骤（2）。</li>
+                </ol>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🔣</span> 3．数字符号说明</h4>
+                <div class="data-table" style="margin-top:10px;">
+                    <table>
+                        <colgroup><col style="width:12%;"><col style="width:28%;"><col style="width:60%;"></colgroup>
+                        <thead>
+                            <tr>
+                                <th style="background:linear-gradient(135deg,#E8EAF6,#C5CAE9);color:#283593;">序号</th>
+                                <th style="background:linear-gradient(135deg,#E8EAF6,#C5CAE9);color:#283593;">符号</th>
+                                <th style="background:linear-gradient(135deg,#E8EAF6,#C5CAE9);color:#283593;">说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="text-align:center;font-weight:700;color:#283593;">（1）</td><td style="font-size:22px;font-weight:700;color:#283593;font-family:'Times New Roman',serif;text-align:center;">$P(t)$</td><td>第 $t$ 代种群</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#00838F;">（2）</td><td style="font-size:22px;font-weight:700;color:#006064;font-family:'Times New Roman',serif;text-align:center;">$g_i(t)$</td><td>第 $t$ 代种群中的第 $i$ 个个体（染色体）</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#1B5E20;">（3）</td><td style="font-size:22px;font-weight:700;color:#2E7D32;font-family:'Times New Roman',serif;text-align:center;">$f(g_i(t))$</td><td>第 $t$ 代种群中第 $i$ 个个体的适应度</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#EF6C00;">（4）</td><td style="font-size:22px;font-weight:700;color:#E65100;font-family:'Times New Roman',serif;text-align:center;">$N$</td><td>种群大小</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#6A1B9A;">（5）</td><td style="font-size:22px;font-weight:700;color:#6A1B9A;font-family:'Times New Roman',serif;text-align:center;">$L$</td><td>染色体的长度（基因的数量）</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#BF360C;">（6）</td><td style="font-size:22px;font-weight:700;color:#BF360C;font-family:'Times New Roman',serif;text-align:center;">$p_c$</td><td>交叉概率</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#C62828;">（7）</td><td style="font-size:22px;font-weight:700;color:#C62828;font-family:'Times New Roman',serif;text-align:center;">$p_m$</td><td>变异概率</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#00695C;">（8）</td><td style="font-size:22px;font-weight:700;color:#00695C;font-family:'Times New Roman',serif;text-align:center;">$t_{\max}$</td><td>最大迭代次数</td></tr>
+                            <tr><td style="text-align:center;font-weight:700;color:#AD1457;">（9）</td><td style="font-size:22px;font-weight:700;color:#AD1457;font-family:'Times New Roman',serif;text-align:center;">$f_{\text{threshold}}$</td><td>适应度阈值</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.4.2.3 遗传算法性质分析</h4>
+            <div class="feature-card card-amber">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFF8E1,#FFECB3);">
+                    <span>📊</span>
+                </div>
+                <div class="card-content">
+                    <h4>模式的概念</h4>
+                    <p>遗传算法是在自然选择中有关理念的启发下得到的，在自然选择中，"适者生存"起到主导作用。遗传算法中的有关机制就是对这一理念的模仿。首先，确定一组染色体，构成一个种群，选出适应度高的个体，利用个体中的编码信息，产生新一代染色体。新一代种群的产生应保证当代种群的适应度高的个体可以生存，且它们的信息能够得到保留和组合，以产生更好的子代。</p>
+                    <p>为简化描述，此处以二进制编码的染色体为例。引入<strong>模式（Schema）</strong>这一术语，具体而言，模式就是指一组染色体，同一位置上的字符是相同的（或者都是0，或者都是1）。利用一个扩展字符表 $\{0, 1, *\}$ 上的字符串来表示模式。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📝</span> 模式的表示与示例</h4>
+                <p>在模式字符串中，0/1表示该模式中的染色体在对应位置的编码限定为0/1，<code style="background:#F3E5F5;padding:2px 6px;border-radius:4px;font-size:17px;">*</code>表示在相对位置上，染色体为0或1。因此，模式描述的是一组具有某些共性的染色体。比如，字符串 $1*01$ 表示模式为 $1*01 = \{1001, 1101\}$；字符串 $0*101*$ 表示模式为 $0*101* = \{001010, 001011, 011010, 011011\}$。</p>
+                <p style="margin-top:12px;">对于长度为 $L$ 的染色体而言，如果其第 $j$ 个位置对应的编码与模式中第 $j$ 个位置的编码相同，或模式中对应位置的编码为*，则说明该染色体属于这一模式。如果一个模式具有 $r$ 个*，那么它包括 $2^r$ 个染色体。此外，长度为 $L$ 的染色体对应着 $2^L$ 个模式。</p>
+            </div>
+
+            <div class="feature-card card-indigo">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8EAF6,#C5CAE9);">
+                    <span>🔑</span>
+                </div>
+                <div class="card-content">
+                    <h4>模式的核心结论</h4>
+                    <p>假如存在一个模式，描述的是优化问题的一些"较好"的解，那么希望 $P(k)$ 中匹配这一模式的染色体的数量能够随着 $k$ 的增加而递增。在解释遗传算法的工作原理时，一个关键的结论是：如果某个模式包括一些染色体，其适应度在种群的平均适应度之上，那么在配对池 $M(k)$ 中能够匹配这一模式的染色体数量的期望值大于种群 $P(k)$ 中能够匹配这一模式的染色体数量的期望值。</p>
+                    <p>为能够对这一观点进行量化描述，引入一些新的记法。令 $H$ 表示某个给定的模式；$e(H,k)$ 表示 $P(k)$ 中能够匹配 $H$ 的染色体数量，即集合 $P(k) \cap H$ 中元素的数量；$f(H,k)$ 表示 $P(k)$ 中能够匹配 $H$ 的染色体的平均适应度。这意味着，如果 $H \cap P(k) = \{x_1, \cdots, x_{e(H,k)}\}$，有</p>
+                    <div class="formula-block">
+                        $$ f(H,k) = \frac{f(x_1) + \cdots + f(x_{e(H,k)})}{e(H,k)} $$
+                    </div>
+                    <p>其中 $N$ 表示种群中染色体的数量；$F(k)$ 表示 $P(k)$ 中所有染色体的适应度之和。特别地，$\bar{F}(k)$ 表示种群中染色体的平均适应度，即</p>
+                    <div class="formula-block">
+                        $$ \bar{F}(k) = \frac{F(k)}{N} = \frac{1}{N} \sum_{i} f_i^{(k)} $$
+                    </div>
+                    <p>令 $m(H,k)$ 表示 $M(k)$ 中能够匹配模式 $H$ 的染色体的数量，即集合 $M(k) \cap H$ 的元素数量。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📐</span> 引理11-1</h4>
+                <p><strong>引理11-1：</strong> $H$ 为给定的模式，$M(H,k)$ 表示 $m(H,k)$ 的期望值，$P(k)$ 已知，则有</p>
+                <div class="formula-block">
+                    $$ M(H,k) = \frac{f(H,k)}{\bar{F}(k)} e(H,k) $$
+                </div>
+                <p style="margin-top:10px;"><strong>证明：</strong>令 $P(k) \cap H = \{x_1, \cdots, x_{e(H,k)}\}$，此处所说的期望，指的是在已知 $P(k)$ 的前提下得到的期望值。对于每个 $m^{(k)} \in M(k)$ 和每个 $i = 1, \cdots, e(H,k)$，$m^{(k)} = x_i$ 的概率为 $f(x_i)/F(k)$。因此，$M(k)$ 中等于 $x_i$ 的染色体的数量期望值为</p>
+                <div class="formula-block">
+                    $$ N \frac{f(x_i)}{F(k)} = \frac{f(x_i)}{\bar{F}(k)} $$
+                </div>
+                <p>$P(k) \cap H$ 中能够被选择进入 $M(k)$ 的染色体的数量期望值为</p>
+                <div class="formula-block">
+                    $$ \sum_{i=1}^{e(H,k)} \frac{f(x_i)}{\bar{F}(k)} = e(H,k) \frac{f(H,k)}{\bar{F}(k)} $$
+                </div>
+                <p>又因为 $M(k)$ 中的染色体同时也属于 $P(k)$，因此 $M(k) \cap H$ 中的染色体也就是 $P(k) \cap H$ 中那些被选入 $M(k)$ 中的染色体，故有</p>
+                <div class="formula-block">
+                    $$ M(H,k) = \frac{f(H,k)}{\bar{F}(k)} e(H,k) $$
+                </div>
+            </div>
+
+            <div class="feature-card card-purple">
+                <div class="card-icon" style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7);">
+                    <span>📐</span>
+                </div>
+                <div class="card-content">
+                    <h4>引理11-2：适应度优势</h4>
+                    <p>从定量的角度说明，如果模式 $H$ 中染色体的平均适应度要超过种群的平均适应度，即 $f(H,k)/\bar{F}(k) > 1$，那么配对池 $M(k)$ 中能够匹配 $H$ 的染色体数量的期望值大于种群 $P(k)$ 中匹配 $H$ 的染色体数量的期望值。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📏</span> 模式的阶次与长度</h4>
+                <p>引入两个参数描述模式的性质，分别为<strong>阶次</strong>和<strong>长度</strong>。</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+                    <div style="background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border:2px solid #FFE082;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#E65100;margin-bottom:8px;">阶次 $o(H)$</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">模式表达式中固定字符的数量（不包括字符*）。如果字符串长度为 $L$，则阶次等于 $L$ 减去*的数量。</div>
+                        <div style="font-size:16px;font-family:'Courier New',monospace;margin-top:10px;padding:8px;background:#FFF3E0;border-radius:6px;">$o(1*01) = 4-1 = 3$<br/>$o(0*1*01) = 6-2 = 4$</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#E0F7FA,#FFFFFF);border:2px solid #80DEEA;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#00695C;margin-bottom:8px;">长度 $l(H)$</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">模式中第1个固定字符和最后一个固定字符之间的距离，即最右边和最左边固定字符之间的距离。</div>
+                        <div style="font-size:16px;font-family:'Courier New',monospace;margin-top:10px;padding:8px;background:#E0F7FA;border-radius:6px;">$l(1*01) = 4-1 = 3$<br/>$l(0*101*) = 5-1 = 4$<br/>$l(**1) = 0$</div>
+                    </div>
+                </div>
+                <p style="margin-top:12px;">对于模式 $H$，若其中染色体的长度为 $L$，则阶次 $o(H)$ 是一个 $0$ 到 $L$ 之间的整数，长度 $l(H)$ 是 $0$ 到 $L-1$ 之间的整数。当模式表达式仅由*组成时，阶次为0，长度也为0；若模式仅包含一个染色体（即表达式中不含*），则阶次为 $L$；若模式表达式的第1个和最后一个位置均为固定字符，则模式的长度为 $L-1$。</p>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🔀</span> 引理11-3：交叉操作的影响</h4>
+                <p>对于 $M(k) \cap H$ 中的一个染色体，其被选中进行交叉操作，且产生的子代中没有染色体属于模式 $H$ 的概率上界为</p>
+                <div class="formula-block">
+                    $$ p_c \frac{l(H)}{L-1} $$
+                </div>
+                <p style="margin-top:10px;"><strong>证明：</strong>考虑 $M(k) \cap H$ 中的一个染色体，被选中进行交叉操作的概率为 $p_c$。如果其子代中没有染色体属于 $H$，则交叉点必须位于 $H$ 的第1个和最后一个固定字符之间。这一概率为 $l(H)/(L-1)$。因此，该染色体被选中进行交叉操作且产生的子代中没有染色体属于模式 $H$ 的概率上界为</p>
+                <div class="formula-block">
+                    $$ p_c \frac{l(H)}{L-1} $$
+                </div>
+                <p>由此可知，对于 $M(k) \cap H$ 中的一个染色体，其没有被选中进行交叉操作，或被选中交叉后产生的子代中至少有一个染色体属于 $H$ 的概率下界为</p>
+                <div class="formula-block">
+                    $$ 1 - p_c \frac{l(H)}{L-1} $$
+                </div>
+                <p>如果 $H$ 中的一个染色体被选中进行交叉操作，其他的父代染色体也属于 $H$，则产生的子代自然也属于 $H$。因此，对于 $M(k) \cap H$ 中的一个染色体，经过交叉操作（包括选择过程），总能以一定的概率产生属于 $H$ 的染色体，概率的下界由前面的公式给出。</p>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">✨</span> 引理11-4：变异操作的影响</h4>
+                <p>对于 $M(k) \cap H$ 中的一个染色体，经过变异操作之后，其仍然属于模式 $H$ 的概率为</p>
+                <div class="formula-block">
+                    $$ (1-p_m)^{o(H)} $$
+                </div>
+                <p style="margin-top:10px;"><strong>证明：</strong>对于 $M(k) \cap H$ 中的一个染色体，当且仅当该染色体中与 $H$ 表达式中的固定字符相对应的字符，在经过变异操作之后没有发生改变，则意味着该染色体仍然属于 $H$。这一概率为</p>
+                <div class="formula-block">
+                    $$ (1-p_m)^{o(H)} $$
+                </div>
+                <p>变异概率 $p_m$ 比较小，因此 $(1-p_m)^{o(H)}$ 近似等于</p>
+                <div class="formula-block">
+                    $$ 1 - p_m o(H) $$
+                </div>
+            </div>
+
+            <div class="feature-card card-red">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFEBEE,#FFCDD2);">
+                    <span>🏆</span>
+                </div>
+                <div class="card-content">
+                    <h4>定理11-5：模式定理</h4>
+                    <p>以上引理综合到一起，得到定理11-5。$H$ 为给定的模式，$\varepsilon(H,k+1)$ 表示在给定 $P(k)$ 时 $e(H,k+1)$ 的期望值，则有</p>
+                    <div class="formula-block">
+                        $$ \varepsilon(H,k+1) \geq (1-p_c \frac{l(H)}{L-1})(1-p_m)^{o(H)} \frac{f(H,k)}{\bar{F}(k)} e(H,k) $$
+                    </div>
+                    <p style="margin-top:10px;"><strong>证明：</strong>对于 $M(k) \cap H$ 中的一个染色体，经过进化之后，如果产生的染色体仍然属于 $H$，则该染色体属于 $P(k+1) \cap H$。由引理11-2和引理11-3可知，这一事件的发生概率存在下界为</p>
+                    <div class="formula-block">
+                        $$ (1-p_c \frac{l(H)}{L-1})(1-p_m)^{o(H)} $$
+                    </div>
+                    <p>由于 $M(k) \cap H$ 中每个染色体能够产生一个染色体位于 $P(k+1) \cap H$ 中，当给定 $P(k)$ 时，$e(H,k+1)$ 的期望值下界为</p>
+                    <div class="formula-block">
+                        $$ (1-p_c \frac{l(H)}{L-1})(1-p_m)^{o(H)} m(H,k) $$
+                    </div>
+                    <p>当 $P(k)$ 给定时，可得 $e(H,k+1)$ 的期望值满足</p>
+                    <div class="formula-block">
+                        $$ \varepsilon(H,k+1) \geq (1-p_c \frac{l(H)}{L-1})(1-p_m)^{o(H)} M(H,k) $$
+                    </div>
+                    <p>最后，利用引理11-1中 $M(H,k) = \frac{f(H,k)}{\bar{F}(k)} e(H,k)$，可证定理成立。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📊</span> 三个因式的影响分析</h4>
+                <p>定理11-5表示的是某个给定模式中，有多少染色体发生变化后，能够从一个种群转移到另外一个种群。有3个因素能够影响到这一变化，分别对应定理中不等式右侧的三个因式，分别为 $1-p_c l(H)/(L-1)$、$(1-p_m)^{o(H)}$ 和 $f(H,k)/\bar{F}(k)$。可以看出，这三个因式越大，在下一个种群中能够匹配 $H$ 的染色体数量期望值就越大。</p>
+                <div class="feature-list" style="margin-top:14px;">
+                    <div class="feature-item">
+                        <span class="feature-badge amber">因式1</span>
+                        <span><strong>$\frac{f(H,k)}{\bar{F}(k)}$</strong> 反映的是模式 $H$ 平均适应度的作用。平均适应度越高，在下一个种群中能够匹配 $H$ 的染色体数量期望值就越大。</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-badge cyan">因式2</span>
+                        <span><strong>$1 - p_c \frac{l(H)}{L-1}$</strong> 反映的是交叉操作的影响。$l(H)$ 越小，在下一个种群中能够匹配 $H$ 的染色体数量期望值就越大。</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-badge purple">因式3</span>
+                        <span><strong>$(1 - p_m)^{o(H)}$</strong> 反映的是变异操作的影响。该因式越大（即 $o(H)$ 越小），在下一个种群中能够匹配 $H$ 的染色体数量期望值就越大。</span>
+                    </div>
+                </div>
+                <p style="margin-top:12px;font-size:19px;font-weight:600;color:#6A1B9A;">总之，如果模式长度偏短、阶次偏低且平均适应度超过平均水平，则从平均意义上来看，在相邻迭代中，种群中属于这一模式的染色体应该越来越多。</p>
+            </div>
+
+            <div class="feature-card card-green">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
+                    <span>✅</span>
+                </div>
+                <div class="card-content">
+                    <h4>遗传算法的特点</h4>
+                    <div class="feature-list" style="margin-top:8px;">
+                        <div class="feature-item">
+                            <span class="feature-badge green">全局搜索</span>
+                            <span>遗传算法在解空间中进行群体搜索，不容易陷入局部最优。</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge blue">鲁棒性强</span>
+                            <span>不依赖梯度信息，适用于不可导、非线性的复杂优化问题。</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge orange">并行性好</span>
+                            <span>基于种群的搜索机制，具有天然的并行计算特性。</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge purple">通用性强</span>
+                            <span>只需定义编码方式和适应度函数，即可应用于各类优化问题。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11.4.3 解决与讨论 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#43A047;">
+                <h3>11.4.3 解决与讨论</h3>
+                <p>物流货物装载优化 · 遗传算法求解0-1背包问题</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.4.3.1 问题分析</h4>
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🎯</span> 装载问题转化为0-1背包问题</h4>
+                <p>将货物装载问题转化为经典的0-1背包问题，通过遗传算法来解决。以下是对该问题进行分析的要点。</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+                    <div style="background:linear-gradient(135deg,#E8EAF6,#FFFFFF);border:2px solid #9FA8DA;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#283593;margin-bottom:6px;">1．编码方案</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">采用二进制编码，染色体长度为6，每位对应一种货物。0表示不选择该货物，1表示选择该货物。</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#E0F2F1,#FFFFFF);border:2px solid #80CBC4;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#00695C;margin-bottom:6px;">2．适应度函数</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">$$f(x) = \sum_{i=1}^{6} v_i x_i, \quad \text{s.t.} \quad \sum_{i=1}^{6} w_i x_i \leq 60, \quad \sum_{i=1}^{6} b_i x_i \leq 1.5$$</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border:2px solid #FFE082;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#E65100;margin-bottom:6px;">3．选择策略</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">采用轮盘赌选择，适应度越高的个体被选中的概率越大。同时保留精英策略，确保最优个体不被破坏。</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#F3E5F5,#FFFFFF);border:2px solid #CE93D8;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#6A1B9A;margin-bottom:6px;">4．遗传操作</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">单点交叉（pc=0.8）：随机选择切点，交换两个父代的基因片段；位变异（pm=0.01）：以小概率翻转某个基因。</div>
+                    </div>
+                </div>
+                <p style="margin-top:14px;">通过使用遗传算法来解决0-1背包问题，能够找到一个近似最优的解决方案，尽可能地使总价值最大化，同时满足重量和体积的双约束。</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.4.3.2 解决步骤</h4>
+            <div class="algorithm-card" style="padding:18px 24px;">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                    <div style="background:linear-gradient(135deg,#E8EAF6,#FFFFFF);border:2px solid #9FA8DA;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#283593;">1．定义问题</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">明确货物重量、体积、价值及载重限制</div></div>
+                    <div style="background:linear-gradient(135deg,#E0F7FA,#FFFFFF);border:2px solid #80DEEA;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#006064;">2．创建初始种群</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">二进制编码，随机生成种群</div></div>
+                    <div style="background:linear-gradient(135deg,#E8F5E9,#FFFFFF);border:2px solid #A5D6A7;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#2E7D32;">3．计算适应度</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">评估总价值，约束内适应度越高越好</div></div>
+                    <div style="background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border:2px solid #FFE082;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#E65100;">4．选择操作</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">轮盘赌选择，适应度高者优先</div></div>
+                    <div style="background:linear-gradient(135deg,#F3E5F5,#FFFFFF);border:2px solid #CE93D8;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#6A1B9A;">5．交叉操作</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">单点交叉重组父代基因</div></div>
+                    <div style="background:linear-gradient(135deg,#FFEBEE,#FFFFFF);border:2px solid #EF9A9A;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#C62828;">6．突变操作</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">基因位翻转，增加多样性</div></div>
+                    <div style="background:linear-gradient(135deg,#E3F2FD,#FFFFFF);border:2px solid #90CAF9;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#1565C0;">7．生成新一代</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">替换部分原始种群</div></div>
+                    <div style="background:linear-gradient(135deg,#F1F8E9,#FFFFFF);border:2px solid #C5E1A5;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#33691E;">8．迭代演化</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">重复步骤4～7至终止</div></div>
+                    <div style="background:linear-gradient(135deg,#FFF3E0,#FFFFFF);border:2px solid #FFCC80;border-radius:10px;padding:12px;"><div style="font-size:15px;font-weight:700;color:#E65100;">9．输出最优解</div><div style="font-size:15px;color:var(--text-secondary);margin-top:4px;">最高适应度染色体即最优方案</div></div>
+                </div>
+                <p style="margin-top:12px;font-size:17px;color:var(--text-secondary);">遗传算法作为启发式搜索算法，能在大规模问题空间中搜索较好方案，可根据实际需求修改和扩展上述思路。</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.4.3.3 问题解决</h4>
+            <div class="feature-card card-green">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
+                    <span>📋</span>
+                </div>
+                <div class="card-content">
+                    <h4>附录11-C</h4>
+                    <p>具体python代码见附录11-C。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 智能体交互演示 -->
+        <div class="case-demo">
+            <div class="case-demo-header">
+                <div class="case-demo-title">
+                    <div class="case-demo-icon">🧬</div>
+                    遗传算法 · 货物装载进化演示
+                </div>
+                <div style="font-size:14px;color:var(--text-muted);">参数：50个体 · 100代 · pc=0.8 · pm=0.01 · 载重=60kg</div>
+            </div>
+            <div class="demo-progress-bar">
+                <div class="demo-progress-fill" id="demoProgress" style="width:0%;"></div>
+            </div>
+            <div class="demo-main">
+                <!-- Agent 智能体 -->
+                <div class="demo-agent-column">
+                    <div class="agent-character">
+                        <span class="agent-emotion" id="agentEmotion">🧬</span>
+                        <div class="agent-avatar">
+                            <svg class="agent-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <g class="agent-body">
+                                    <!-- 身体 -->
+                                    <ellipse cx="60" cy="75" rx="32" ry="25" fill="url(#genBody)" stroke="#6A1B9A" stroke-width="2"/>
+                                    <defs><linearGradient id="genBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#CE93D8"/><stop offset="100%" stop-color="#8E24AA"/></linearGradient></defs>
+                                    <!-- DNA双螺旋 -->
+                                    <g transform="translate(60, 72)">
+                                        <path d="M-8,-15 Q-12,-5 -8,5 Q-4,15 0,5 Q4,-5 0,-15 Q-4,-25 -8,-15" fill="none" stroke="#F3E5F5" stroke-width="2.5" stroke-linecap="round"/>
+                                        <path d="M8,-15 Q12,-5 8,5 Q4,15 0,5 Q-4,-5 0,-15 Q4,-25 8,-15" fill="none" stroke="#E1BEE7" stroke-width="2.5" stroke-linecap="round"/>
+                                        <circle cx="-8" cy="-15" r="3" fill="#F8BBD0"/>
+                                        <circle cx="8" cy="-15" r="3" fill="#F8BBD0"/>
+                                        <circle cx="-8" cy="5" r="3" fill="#CE93D8"/>
+                                        <circle cx="8" cy="5" r="3" fill="#CE93D8"/>
+                                    </g>
+                                    <!-- 头 -->
+                                    <circle cx="60" cy="38" r="22" fill="url(#genHead)" stroke="#6A1B9A" stroke-width="2"/>
+                                    <defs><linearGradient id="genHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F3E5F5"/><stop offset="100%" stop-color="#CE93D8"/></linearGradient></defs>
+                                    <!-- 天线 -->
+                                    <g class="agent-antenna">
+                                        <line x1="55" y1="18" x2="50" y2="8" stroke="#6A1B9A" stroke-width="2" stroke-linecap="round"/>
+                                        <circle cx="50" cy="8" r="4" fill="#F06292"/>
+                                    </g>
+                                    <g class="agent-antenna" style="animation-delay:0.5s;">
+                                        <line x1="65" y1="18" x2="70" y2="8" stroke="#6A1B9A" stroke-width="2" stroke-linecap="round"/>
+                                        <circle cx="70" cy="8" r="4" fill="#F06292"/>
+                                    </g>
+                                    <!-- 眼睛 -->
+                                    <circle class="agent-eye-blink" cx="52" cy="36" r="4" fill="white"/>
+                                    <circle class="agent-eye-blink" cx="68" cy="36" r="4" fill="white"/>
+                                    <circle cx="52" cy="37" r="2" fill="#4A148C"/>
+                                    <circle cx="68" cy="37" r="2" fill="#4A148C"/>
+                                    <!-- 嘴 -->
+                                    <path d="M54,46 Q60,52 66,46" fill="none" stroke="#6A1B9A" stroke-width="2" stroke-linecap="round"/>
+                                    <!-- 手臂 -->
+                                    <g class="agent-left-arm" style="transform-origin:32px 68px;">
+                                        <line x1="32" y1="68" x2="20" y2="90" stroke="#CE93D8" stroke-width="4" stroke-linecap="round"/>
+                                        <circle cx="20" cy="90" r="6" fill="#F3E5F5" stroke="#6A1B9A" stroke-width="1.5"/>
+                                    </g>
+                                    <g class="agent-right-arm" style="transform-origin:88px 68px;">
+                                        <line x1="88" y1="68" x2="100" y2="90" stroke="#CE93D8" stroke-width="4" stroke-linecap="round"/>
+                                        <circle cx="100" cy="90" r="6" fill="#F3E5F5" stroke="#6A1B9A" stroke-width="1.5"/>
+                                    </g>
+                                    <!-- 脚 -->
+                                    <line x1="50" y1="98" x2="48" y2="110" stroke="#6A1B9A" stroke-width="3" stroke-linecap="round"/>
+                                    <line x1="70" y1="98" x2="72" y2="110" stroke="#6A1B9A" stroke-width="3" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="agent-name">基因博士</div>
+                        <div class="agent-role">遗传算法专家</div>
+                        <div class="agent-bubble" id="agentBubble">
+                            大家好！我是基因博士🧬！今天我将展示遗传算法如何模拟自然选择，通过编码、选择、交叉、变异来进化出最优的货物装载方案。点击"开始演示"开始探索吧！
+                            <div class="typing-dots" id="typingDots"><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="agent-status" id="agentStatus">待命中</div>
+                    </div>
+                </div>
+
+                <!-- 演示内容 -->
+                <div class="demo-content-column">
+                    <div class="steps-track" id="stepsTrack"></div>
+                    <div id="demoStepLabel" class="demo-step-label"></div>
+                    <div id="demoContent" class="demo-content-panel"></div>
+                    <div class="demo-action-bar">
+                        <button class="demo-action-btn primary" onclick="startAutoDemo()" id="startBtn">▶ 开始演示</button>
+                        <button class="demo-action-btn ghost" onclick="resetDemo()">↺ 重置</button>
+                        <button class="demo-action-btn ghost" onclick="prevStep()">← 上一步</button>
+                        <button class="demo-action-btn accent" onclick="nextStep()">下一步 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ===== 货物数据 =====
+const GOODS = [
+    {id:1, name:'货物1', weight:20, volume:0.5, value:100, icon:'📦'},
+    {id:2, name:'货物2', weight:15, volume:0.3, value:80, icon:'📋'},
+    {id:3, name:'货物3', weight:10, volume:0.2, value:50, icon:'🎁'},
+    {id:4, name:'货物4', weight:30, volume:0.6, value:120, icon:'📰'},
+    {id:5, name:'货物5', weight:25, volume:0.5, value:90, icon:'🪵'},
+    {id:6, name:'货物6', weight:12, volume:0.2, value:60, icon:'💼'}
+];
+const MAX_WEIGHT = 60;
+const MAX_VOLUME = 1.5;
+const GENE_LEN = 6;
+
+// ===== 遗传算法参数 =====
+const POP_SIZE = 50;
+const MAX_GEN = 100;
+const PC = 0.8;
+const PM = 0.01;
+const ELITE_SIZE = 2;
+
+// 评估染色体适应度
+function evaluate(chromosome) {
+    let w = 0, v = 0, b = 0;
+    for (let i=0; i<GENE_LEN; i++) {
+        if (chromosome[i] === 1) {
+            w += GOODS[i].weight;
+            v += GOODS[i].value;
+            b += GOODS[i].volume;
+        }
+    }
+    const valid = w <= MAX_WEIGHT && b <= MAX_VOLUME;
+    return {value: valid ? v : 0, weight: w, volume: b, valid: valid};
+}
+
+// ===== 初始化种群 =====
+let population = [];
+let bestIndividual = null;
+let bestFitness = 0;
+let convergenceData = [];
+
+function initPopulation() {
+    population = [];
+    bestIndividual = null;
+    bestFitness = 0;
+    convergenceData = [];
+    for (let i=0; i<POP_SIZE; i++) {
+        const chrom = [];
+        for (let j=0; j<GENE_LEN; j++) {
+            chrom.push(Math.random() < 0.5 ? 0 : 1);
+        }
+        population.push(chrom);
+    }
+    const fit = evaluateAll();
+    bestFitness = fit.max;
+    bestIndividual = fit.best;
+    convergenceData.push({gen: 0, best: fit.max, avg: fit.avg});
+}
+
+function evaluateAll() {
+    let maxV = 0, sumV = 0, best = null;
+    for (let i=0; i<POP_SIZE; i++) {
+        const fit = evaluate(population[i]);
+        if (fit.value > maxV) {
+            maxV = fit.value;
+            best = population[i].slice();
+        }
+        sumV += fit.value;
+    }
+    return {max: maxV, avg: sumV/POP_SIZE, best: best};
+}
+
+// 轮盘赌选择
+function rouletteSelection() {
+    const fitnesses = population.map(c => evaluate(c).value);
+    const totalFit = fitnesses.reduce((a,b) => a+b, 0);
+    if (totalFit === 0) return Math.floor(Math.random() * POP_SIZE);
+    let r = Math.random() * totalFit;
+    for (let i=0; i<POP_SIZE; i++) {
+        r -= fitnesses[i];
+        if (r <= 0) return i;
+    }
+    return POP_SIZE - 1;
+}
+
+// 单点交叉
+function crossover(p1, p2) {
+    const point = Math.floor(Math.random() * (GENE_LEN - 1)) + 1;
+    const c1 = p1.slice(0, point).concat(p2.slice(point));
+    const c2 = p2.slice(0, point).concat(p1.slice(point));
+    return {child1: c1, child2: c2, point: point};
+}
+
+// 变异
+function mutate(chrom) {
+    const mutated = chrom.slice();
+    let mutatedIndex = -1;
+    for (let i=0; i<GENE_LEN; i++) {
+        if (Math.random() < PM) {
+            mutated[i] = 1 - mutated[i];
+            mutatedIndex = i;
+        }
+    }
+    return {chrom: mutated, index: mutatedIndex};
+}
+
+// 一代进化
+let currentGen = 0;
+function evolveGeneration() {
+    currentGen++;
+    // 1. 评估
+    const fitnesses = population.map(c => evaluate(c).value);
+    
+    // 2. 精英保留
+    const sortedIndices = fitnesses.map((v,i) => ({v,i})).sort((a,b) => b.v-a.v);
+    const newPop = [];
+    for (let i=0; i<ELITE_SIZE; i++) {
+        newPop.push(population[sortedIndices[i].i].slice());
+    }
+    
+    // 3. 选择+交叉+变异
+    while (newPop.length < POP_SIZE) {
+        const p1Idx = rouletteSelection();
+        let p2Idx = rouletteSelection();
+        while (p2Idx === p1Idx) p2Idx = rouletteSelection();
+        
+        let c1, c2;
+        if (Math.random() < PC) {
+            const {child1, child2} = crossover(population[p1Idx], population[p2Idx]);
+            c1 = child1;
+            c2 = child2;
+        } else {
+            c1 = population[p1Idx].slice();
+            c2 = population[p2Idx].slice();
+        }
+        
+        const m1 = mutate(c1);
+        const m2 = mutate(c2);
+        newPop.push(m1.chrom);
+        if (newPop.length < POP_SIZE) newPop.push(m2.chrom);
+    }
+    
+    population = newPop;
+    const fit = evaluateAll();
+    if (fit.max > bestFitness) {
+        bestFitness = fit.max;
+        bestIndividual = fit.best;
+    }
+    convergenceData.push({gen: currentGen, best: Math.max(bestFitness, fit.max), avg: fit.avg});
+}
+
+// ===== 6个演示步骤 =====
+const STEPS = [
+    {
+        label: '初始化种群',
+        emotion: '🧬',
+        bubble: '我们初始化50个随机染色体，每个代表一种货物装载方案（6位二进制）。现在来看初始种群的多样性！',
+        status: '初始化中',
+        render: function() {
+            initPopulation();
+            return renderInitPopulation();
+        }
+    },
+    {
+        label: '适应度评估',
+        emotion: '🔍',
+        bubble: '每个"基因个体"都要评估：选了哪些货物？总重量是否超60kg？总体积是否超1.5m³？都满足时价值越高越好！',
+        status: '评估适应度',
+        render: function() {
+            return renderFitnessEvaluation();
+        }
+    },
+    {
+        label: '轮盘赌选择',
+        emotion: '🎯',
+        bubble: '根据适应度值进行轮盘赌选择，适应度越高的个体被选中的概率越大！看看哪些优秀个体被选中了？',
+        status: '选择中',
+        render: function() {
+            return renderSelection();
+        }
+    },
+    {
+        label: '单点交叉',
+        emotion: '🔀',
+        bubble: '对选中的父代进行单点交叉（pc=0.8），随机选择切点交换基因片段，产生新的基因组合！',
+        status: '交叉中',
+        render: function() {
+            return renderCrossover();
+        }
+    },
+    {
+        label: '基因变异',
+        emotion: '✨',
+        bubble: '以变异概率pm=0.01对基因进行随机翻转（0→1或1→0），保持种群多样性，防止陷入局部最优！',
+        status: '变异中',
+        render: function() {
+            for (let i=0; i<10; i++) evolveGeneration();
+            return renderMutationAndEvolve();
+        }
+    },
+    {
+        label: '种群进化与收敛',
+        emotion: '🏆',
+        bubble: '经过多代进化，种群逐渐收敛到最优解！看看最优装载方案和收敛曲线！',
+        status: '进化完成',
+        render: function() {
+            while (currentGen < MAX_GEN) {
+                for (let i=0; i<5 && currentGen < MAX_GEN; i++) evolveGeneration();
+            }
+            return renderFinalResult();
+        }
+    }
+];
+
+// ===== 渲染函数 =====
+function renderInitPopulation() {
+    let html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0;">';
+    for (let i=0; i<Math.min(10, POP_SIZE); i++) {
+        const chrom = population[i];
+        const fit = evaluate(chrom);
+        html += '<div class="individual-card' + (fit.value > 0 ? ' selected' : '') + '">';
+        html += '<div class="individual-info"><span class="individual-id">个体' + (i+1) + '</span><span class="individual-fitness">' + fit.value + '</span></div>';
+        html += '<div class="individual-chromosome">';
+        for (let j=0; j<GENE_LEN; j++) {
+            html += '<div class="gene ' + (chrom[j] ? 'one' : 'zero') + '">' + chrom[j] + '</div>';
+        }
+        html += '</div></div>';
+    }
+    html += '</div>';
+    html += '<div class="calc-panel"><div class="calc-title">📊 初始种群统计</div>';
+    const fit = evaluateAll();
+    html += '<div class="calc-row">种群规模: <span class="val">' + POP_SIZE + '</span></div>';
+    html += '<div class="calc-row">最优适应度: <span class="val">' + fit.max + '</span></div>';
+    html += '<div class="calc-row">平均适应度: <span class="val blue">' + fit.avg.toFixed(1) + '</span></div>';
+    html += '</div>';
+    return html;
+}
+
+function renderFitnessEvaluation() {
+    let html = '<div class="calc-panel"><div class="calc-title">🔍 适应度评估详情</div>';
+    for (let i=0; i<8; i++) {
+        const chrom = population[i];
+        const fit = evaluate(chrom);
+        const selGoods = [];
+        for (let j=0; j<GENE_LEN; j++) {
+            if (chrom[j] === 1) selGoods.push(GOODS[j].name);
+        }
+        html += '<div class="calc-row' + (fit.valid ? '' : ' highlight') + '">';
+        html += '<span class="var">个体' + (i+1) + '</span> ';
+        html += '染色体: [' + chrom.join(',') + '] ';
+        html += '价值=<span class="val">' + fit.value + '</span> ';
+        html += '重量=<span class="val ' + (fit.weight > MAX_WEIGHT ? 'red' : 'green') + '">' + fit.weight + '/' + MAX_WEIGHT + '</span> ';
+        html += '体积=<span class="val ' + (fit.volume > MAX_VOLUME ? 'red' : 'green') + '">' + fit.volume + '/' + MAX_VOLUME + '</span> ';
+        html += (fit.valid ? '✓' : '✗超载');
+        html += '</div>';
+    }
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:center;margin:12px 0;"><div style="font-size:18px;font-weight:700;color:#6A1B9A;">📊 轮盘赌选择示意图</div></div>';
+    html += renderSelectionWheel();
+    return html;
+}
+
+function renderSelectionWheel() {
+    const fitnesses = population.slice(0, 8).map(c => evaluate(c).value);
+    const total = fitnesses.reduce((a,b) => a+b, 0) || 1;
+    const colors = ['#8E24AA','#BA68C8','#F06292','#AB47BC','#CE93D8','#E1BEE7','#7B1FA2','#9C27B0'];
+    
+    let html = '<svg class="selection-wheel" viewBox="-100 -100 200 200">';
+    let startAngle = -Math.PI/2;
+    for (let i=0; i<fitnesses.length; i++) {
+        const angle = (fitnesses[i] / total) * 2 * Math.PI;
+        const endAngle = startAngle + angle;
+        const x1 = 90 * Math.cos(startAngle), y1 = 90 * Math.sin(startAngle);
+        const x2 = 90 * Math.cos(endAngle), y2 = 90 * Math.sin(endAngle);
+        const largeArc = angle > Math.PI ? 1 : 0;
+        html += '<path d="M0,0 L' + x1 + ',' + y1 + ' A90,90 0 ' + largeArc + ' 1 ' + x2 + ',' + y2 + ' Z" fill="' + colors[i] + '" opacity="0.85" stroke="white" stroke-width="2"/>';
+        const midAngle = startAngle + angle/2;
+        const labelR = 60;
+        const lx = labelR * Math.cos(midAngle), ly = labelR * Math.sin(midAngle);
+        const pct = (fitnesses[i]/total*100).toFixed(1);
+        html += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" font-size="10" font-weight="700" fill="white">I' + (i+1) + ':' + pct + '%</text>';
+        startAngle = endAngle;
+    }
+    html += '<circle cx="0" cy="0" r="25" fill="white" stroke="#6A1B9A" stroke-width="3"/>';
+    html += '<text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#6A1B9A">轮盘赌</text>';
+    html += '</svg>';
+    return html;
+}
+
+function renderSelection() {
+    let html = '<div class="calc-panel"><div class="calc-title">🎯 选择结果</div>';
+    const selected = [];
+    for (let i=0; i<10; i++) {
+        selected.push(rouletteSelection());
+    }
+    html += '<div style="font-size:16px;margin-bottom:10px;">被选中的个体索引：' + selected.map(s => '个体' + (s+1)).join(', ') + '</div>';
+    html += '</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0;">';
+    for (let i=0; i<Math.min(6, selected.length); i++) {
+        const chrom = population[selected[i]];
+        const fit = evaluate(chrom);
+        html += '<div class="individual-card selected">';
+        html += '<div class="individual-info"><span class="individual-id">父代P' + (i+1) + '</span><span class="individual-fitness">适应度:' + fit.value + '</span></div>';
+        html += '<div class="individual-chromosome">';
+        for (let j=0; j<GENE_LEN; j++) {
+            html += '<div class="gene ' + (chrom[j] ? 'one' : 'zero') + '">' + chrom[j] + '</div>';
+        }
+        html += '</div></div>';
+    }
+    html += '</div>';
+    html += '<div class="calc-panel"><div class="calc-title">📐 选择公式</div>';
+    html += '<div style="font-size:18px;color:#283593;text-align:center;margin:10px 0;">P(i) = f(i) / Σf(j)</div>';
+    html += '<div style="font-size:14px;color:var(--text-secondary);">个体i被选中的概率 = 个体i的适应度 / 种群总适应度</div>';
+    html += '</div>';
+    return html;
+}
+
+function renderCrossover() {
+    // 模拟一次交叉
+    const p1 = population[rouletteSelection()];
+    const p2 = population[rouletteSelection()];
+    const point = Math.floor(Math.random() * (GENE_LEN - 1)) + 1;
+    const c1 = p1.slice(0, point).concat(p2.slice(point));
+    const c2 = p2.slice(0, point).concat(p1.slice(point));
+    
+    let html = '<div class="calc-panel"><div class="calc-title">🔀 单点交叉演示（切点=' + point + '）</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:10px 0;">';
+    
+    html += '<div><div style="font-size:15px;font-weight:700;color:#6A1B9A;margin-bottom:6px;">父代A</div>';
+    html += '<div class="chromosome">';
+    for (let j=0; j<GENE_LEN; j++) {
+        const cls = j >= point ? 'one' : (p1[j] ? 'one' : 'zero');
+        const crossed = j === point;
+        html += '<div class="gene-wrapper"><div class="gene ' + (j < point ? (p1[j] ? 'one' : 'zero') : (p1[j] ? 'one' : 'zero')) + (crossed ? ' crossover' : '') + '"' + (j >= point ? ' style="opacity:0.5"' : '') + '>' + p1[j] + '</div><div class="gene-label">' + GOODS[j].name + '</div></div>';
+    }
+    html += '</div></div>';
+    
+    html += '<div><div style="font-size:15px;font-weight:700;color:#E65100;margin-bottom:6px;">父代B</div>';
+    html += '<div class="chromosome">';
+    for (let j=0; j<GENE_LEN; j++) {
+        const crossed = j === point;
+        html += '<div class="gene-wrapper"><div class="gene ' + (j < point ? (p2[j] ? 'one' : 'zero') : (p2[j] ? 'one' : 'zero')) + (crossed ? ' crossover' : '') + '"' + (j >= point ? ' style="opacity:0.5"' : '') + '>' + p2[j] + '</div><div class="gene-label">' + GOODS[j].name + '</div></div>';
+    }
+    html += '</div></div>';
+    html += '</div>';
+    
+    html += '<div style="text-align:center;font-size:32px;margin:10px 0;">⬇ 交叉 ⬇</div>';
+    
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:10px 0;">';
+    
+    html += '<div style="background:linear-gradient(135deg,#E8F5E9,#FFFFFF);border:2px solid #A5D6A7;border-radius:12px;padding:10px;"><div style="font-size:15px;font-weight:700;color:#2E7D32;margin-bottom:6px;">子代A</div>';
+    html += '<div class="chromosome">';
+    for (let j=0; j<GENE_LEN; j++) {
+        const isNew = j >= point;
+        html += '<div class="gene-wrapper"><div class="gene ' + (c1[j] ? 'one' : 'zero') + '"' + (isNew ? ' style="box-shadow:0 0 8px #FFC107;"' : '') + '>' + c1[j] + '</div><div class="gene-label">' + GOODS[j].name + '</div></div>';
+    }
+    html += '</div><div style="font-size:13px;color:var(--text-muted);margin-top:6px;">重量: ' + evaluate(c1).weight + 'kg | 价值: ' + evaluate(c1).value + '元</div></div>';
+    
+    html += '<div style="background:linear-gradient(135deg,#E8F5E9,#FFFFFF);border:2px solid #A5D6A7;border-radius:12px;padding:10px;"><div style="font-size:15px;font-weight:700;color:#2E7D32;margin-bottom:6px;">子代B</div>';
+    html += '<div class="chromosome">';
+    for (let j=0; j<GENE_LEN; j++) {
+        const isNew = j >= point;
+        html += '<div class="gene-wrapper"><div class="gene ' + (c2[j] ? 'one' : 'zero') + '"' + (isNew ? ' style="box-shadow:0 0 8px #FFC107;"' : '') + '>' + c2[j] + '</div><div class="gene-label">' + GOODS[j].name + '</div></div>';
+    }
+    html += '</div><div style="font-size:13px;color:var(--text-muted);margin-top:6px;">重量: ' + evaluate(c2).weight + 'kg | 价值: ' + evaluate(c2).value + '元</div></div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function renderMutationAndEvolve() {
+    let html = '<div class="calc-panel"><div class="calc-title">✨ 变异操作演示（pm=' + PM + '）</div>';
+    const mutIdx = Math.floor(Math.random() * GENE_LEN);
+    const chrom = population[0].slice();
+    const oldVal = chrom[mutIdx];
+    chrom[mutIdx] = 1 - chrom[mutIdx];
+    
+    html += '<div style="display:flex;align-items:center;gap:20px;margin:10px 0;">';
+    html += '<div style="flex:1;text-align:center;"><div style="font-size:14px;color:var(--text-muted);">变异前</div><div class="chromosome">';
+    for (let j=0; j<GENE_LEN; j++) {
+        html += '<div class="gene-wrapper"><div class="gene ' + (population[0][j] ? 'one' : 'zero') + (j === mutIdx ? ' mutation' : '') + '">' + population[0][j] + '</div><div class="gene-label">' + GOODS[j].name + '</div></div>';
+    }
+    html += '</div></div>';
+    html += '<div style="font-size:28px;">→</div>';
+    html += '<div style="flex:1;text-align:center;"><div style="font-size:14px;color:var(--text-muted);">变异后</div><div class="chromosome">';
+    for (let j=0; j<GENE_LEN; j++) {
+        html += '<div class="gene-wrapper"><div class="gene ' + (chrom[j] ? 'one' : 'zero') + (j === mutIdx ? ' mutation' : '') + '">' + chrom[j] + '</div><div class="gene-label">' + GOODS[j].name + '</div></div>';
+    }
+    html += '</div></div>';
+    html += '</div>';
+    html += '<div style="text-align:center;font-size:14px;color:var(--text-muted);">基因' + (mutIdx+1) + ': ' + oldVal + ' → ' + chrom[mutIdx] + ' (翻转)</div>';
+    html += '</div>';
+    
+    html += '<div class="calc-panel"><div class="calc-title">📈 进化10代后状态</div>';
+    const fit = evaluateAll();
+    html += '<div class="calc-row">当前代数: <span class="val">' + currentGen + '</span></div>';
+    html += '<div class="calc-row">历史最优: <span class="val">' + bestFitness + '</span></div>';
+    html += '<div class="calc-row">当前最优: <span class="val green">' + fit.max + '</span></div>';
+    html += '<div class="calc-row">平均适应度: <span class="val blue">' + fit.avg.toFixed(1) + '</span></div>';
+    html += '</div>';
+    html += renderConvergenceChart();
+    return html;
+}
+
+function renderFinalResult() {
+    // 暴力枚举找理论最优
+    let theoreticalBest = 0;
+    let theoreticalChrom = null;
+    for (let mask=0; mask<64; mask++) {
+        const chrom = [];
+        for (let j=0; j<GENE_LEN; j++) chrom.push((mask >> j) & 1);
+        const fit = evaluate(chrom);
+        if (fit.valid && fit.value > theoreticalBest) {
+            theoreticalBest = fit.value;
+            theoreticalChrom = chrom;
+        }
+    }
+    
+    const bestFit = evaluate(bestIndividual);
+    const selGoods = [];
+    for (let j=0; j<GENE_LEN; j++) {
+        if (bestIndividual[j] === 1) selGoods.push(GOODS[j].name);
+    }
+    
+    let html = '<div style="background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border:3px solid #FFC107;border-radius:16px;padding:20px;margin-bottom:16px;">';
+    html += '<div style="text-align:center;"><div style="font-size:42px;">🏆🧬✨</div>';
+    html += '<div style="font-size:22px;font-weight:700;color:#E65100;margin:10px 0;">遗传算法进化完成！</div></div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">';
+    html += '<div style="background:white;border:2px solid #A5D6A7;border-radius:12px;padding:14px;text-align:center;">';
+    html += '<div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">📊 理论最优解（暴力枚举）</div>';
+    html += '<div style="font-size:32px;font-weight:700;color:#2E7D32;font-family:Courier New;">' + theoreticalBest + '</div>';
+    const theorGoods = [];
+    for (let j=0; j<GENE_LEN; j++) {
+        if (theoreticalChrom[j] === 1) theorGoods.push(GOODS[j].name);
+    }
+    html += '<div style="font-size:15px;color:#2E7D32;margin-top:6px;">选择：' + theorGoods.join(' + ') + '</div>';
+    html += '</div>';
+    html += '<div style="background:white;border:2px solid #CE93D8;border-radius:12px;padding:14px;text-align:center;">';
+    html += '<div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">🧬 GA找到的最优解</div>';
+    html += '<div style="font-size:32px;font-weight:700;color:#6A1B9A;font-family:Courier New;">' + bestFit.value + '</div>';
+    html += '<div style="font-size:14px;color:var(--text-muted);">重量：' + bestFit.weight + '/' + MAX_WEIGHT + 'kg | 体积：' + bestFit.volume + '/' + MAX_VOLUME + 'm³</div>';
+    html += '<div style="font-size:15px;color:#6A1B9A;margin-top:6px;">选择：' + selGoods.join(' + ') + '</div>';
+    html += '</div></div>';
+    html += '</div>';
+    
+    html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0;">';
+    for (let j=0; j<GENE_LEN; j++) {
+        html += '<div class="goods-item' + (bestIndividual[j] ? ' selected' : '') + '">';
+        html += '<div class="goods-icon">' + GOODS[j].icon + '</div>';
+        html += '<div class="goods-name">' + GOODS[j].name + '</div>';
+        html += '<div class="goods-info">w=' + GOODS[j].weight + 'kg</div>';
+        html += '<span class="goods-tag ' + (bestIndividual[j] ? 'in' : 'out') + '">' + (bestIndividual[j] ? '✓装载' : '✗未装') + '</span>';
+        html += '</div>';
+    }
+    html += '</div>';
+    
+    html += '<div class="weight-bar-label"><span>0</span><span>总重量: <b>' + bestFit.weight + '</b> / ' + MAX_WEIGHT + ' kg</span><span>' + MAX_WEIGHT + '</span></div>';
+    html += '<div class="weight-bar"><div class="weight-bar-fill ' + (bestFit.weight > MAX_WEIGHT ? 'over' : '') + '" style="width:' + (bestFit.weight/MAX_WEIGHT*100) + '%;"></div></div>';
+    html += '<div class="weight-bar-label"><span>0</span><span>总体积: <b>' + bestFit.volume + '</b> / ' + MAX_VOLUME + ' m³</span><span>' + MAX_VOLUME + '</span></div>';
+    html += '<div class="weight-bar"><div class="weight-bar-fill ' + (bestFit.volume > MAX_VOLUME ? 'over' : '') + '" style="width:' + (bestFit.volume/MAX_VOLUME*100) + '%;"></div></div>';
+    
+    html += renderConvergenceChart();
+    
+    html += '<div style="text-align:center;padding:16px;background:linear-gradient(135deg,#F3E5F5,#FFFFFF);border-radius:14px;border:2px solid #CE93D8;margin-top:14px;">';
+    html += '<div style="font-size:18px;font-weight:700;color:#6A1B9A;">🎉 遗传算法成功求解货物装载问题！</div>';
+    html += '<div style="font-size:15px;color:var(--text-muted);margin-top:4px;">自然选择 → 适者生存 → 基因交叉变异 → 高效进化到全局最优解</div>';
+    html += '</div>';
+    return html;
+}
+
+function renderConvergenceChart() {
+    if (convergenceData.length < 2) return '';
+    let html = '<div class="convergence-chart"><div style="font-size:16px;font-weight:600;color:#6A1B9A;margin-bottom:10px;">📈 收敛曲线（最优价值 vs 代数）</div>';
+    html += '<svg class="conv-svg" viewBox="0 0 500 200">';
+    html += '<defs><linearGradient id="gaConvGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#CE93D8" stop-opacity="0.6"/><stop offset="100%" stop-color="#CE93D8" stop-opacity="0"/></linearGradient></defs>';
+    html += '<rect width="500" height="200" rx="10" fill="#FAFAFA"/>';
+    html += '<line x1="40" y1="180" x2="480" y2="180" stroke="#BDBDBD" stroke-width="1.5"/>';
+    html += '<line x1="40" y1="20" x2="40" y2="180" stroke="#BDBDBD" stroke-width="1.5"/>';
+    html += '<text x="260" y="195" text-anchor="middle" font-size="11" fill="#757575">进化代数</text>';
+    html += '<text x="15" y="100" text-anchor="middle" font-size="11" fill="#757575" transform="rotate(-90 15 100)">价值</text>';
+    
+    const maxV = Math.max(450, ...convergenceData.map(d=>d.best));
+    for (let i=0; i<=5; i++) {
+        const v = Math.round(maxV * i / 5);
+        const y = 180 - i*32;
+        html += '<line x1="38" y1="' + y + '" x2="42" y2="' + y + '" stroke="#9E9E9E"/>';
+        html += '<text x="32" y="' + (y+4) + '" text-anchor="end" font-size="10" fill="#757575">' + v + '</text>';
+    }
+    for (let i=0; i<=5; i++) {
+        const g = Math.round(MAX_GEN * i / 5);
+        const x = 40 + (440 * g / MAX_GEN);
+        html += '<line x1="' + x + '" y1="178" x2="' + x + '" y2="182" stroke="#9E9E9E"/>';
+        html += '<text x="' + x + '" y="192" text-anchor="middle" font-size="10" fill="#757575">' + g + '</text>';
+    }
+    
+    if (convergenceData.length > 1) {
+        let pathD = 'M40,180 ';
+        for (let i=0; i<convergenceData.length; i++) {
+            const x = 40 + (440 * convergenceData[i].gen / MAX_GEN);
+            const y = 180 - (160 * convergenceData[i].best / maxV);
+            pathD += 'L' + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+        }
+        pathD += 'L' + (40 + 440 * convergenceData[convergenceData.length-1].gen / MAX_GEN) + ',180 Z';
+        html += '<path d="' + pathD + '" fill="url(#gaConvGrad)"/>';
+        
+        let lineD = '';
+        for (let i=0; i<convergenceData.length; i++) {
+            const x = 40 + (440 * convergenceData[i].gen / MAX_GEN);
+            const y = 180 - (160 * convergenceData[i].best / maxV);
+            lineD += (i===0?'M':'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+        }
+        html += '<path d="' + lineD + '" fill="none" stroke="#8E24AA" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        
+        const lastX = 40 + (440 * convergenceData[convergenceData.length-1].gen / MAX_GEN);
+        const lastY = 180 - (160 * convergenceData[convergenceData.length-1].best / maxV);
+        html += '<circle cx="' + lastX + '" cy="' + lastY + '" r="6" fill="#E91E63" stroke="white" stroke-width="2"/>';
+    }
+    html += '</svg></div>';
+    return html;
+}
+
+// ===== 演示控制 =====
+let currentStep = -1;
+let autoTimer = null;
+const STEP_COUNT = STEPS.length;
+
+function buildStepsTrack() {
+    const track = document.getElementById('stepsTrack');
+    let html = '';
+    for (let i=0; i<STEP_COUNT; i++) {
+        if (i>0) html += '<div class="step-chip-connector" id="conn-' + (i-1) + '"></div>';
+        html += '<div class="step-chip" id="chip-' + i + '" onclick="goToStep(' + i + ')">';
+        html += '<span class="chip-num">' + (i+1) + '</span>' + STEPS[i].label;
+        html += '</div>';
+    }
+    track.innerHTML = html;
+}
+
+function updateStepUI() {
+    document.getElementById('demoProgress').style.width = ((currentStep+1)/STEP_COUNT*100)+'%';
+    for (let i=0; i<STEP_COUNT; i++) {
+        const chip = document.getElementById('chip-' + i);
+        chip.classList.remove('active','done');
+        if (i < currentStep) chip.classList.add('done');
+        else if (i === currentStep) chip.classList.add('active');
+        if (i>0) {
+            const conn = document.getElementById('conn-' + (i-1));
+            conn.classList.toggle('done', i-1 < currentStep);
+        }
+    }
+    const lbl = document.getElementById('demoStepLabel');
+    if (currentStep >= 0) {
+        lbl.innerHTML = '<span class="step-num">Step ' + (currentStep+1) + '/' + STEP_COUNT + '</span> ' + STEPS[currentStep].label;
+    } else {
+        lbl.innerHTML = '<span class="step-num">准备中</span> 点击"开始演示"启动遗传算法';
+    }
+    const content = document.getElementById('demoContent');
+    if (currentStep < 0) {
+        content.innerHTML = '<div style="background:linear-gradient(135deg,#F3E5F5,#FFFFFF);border-radius:14px;padding:26px;border:2px dashed #CE93D8;text-align:center;"><div style="font-size:52px;margin-bottom:10px;">🧬🧬🧬📦</div><div style="font-size:22px;font-weight:700;color:#6A1B9A;margin-bottom:8px;">遗传算法 · 货物装载演示</div><div style="font-size:17px;color:var(--text-secondary);line-height:1.8;margin:12px auto;max-width:560px;">演示将按以下 6 个步骤进行算法讲解与可视化：<br/><b>初始化种群 → 适应度评估 → 轮盘赌选择 → 单点交叉 → 基因变异 → 种群进化收敛</b></div><div style="font-size:15px;color:var(--text-muted);">演示过程中可以随时点击"上一步/下一步"手动查看，或点击"开始演示"自动播放</div></div>';
+    } else {
+        content.innerHTML = STEPS[currentStep].render();
+        if (window.renderMathInElement) {
+            renderMathInElement(content, {
+                delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+                throwOnError: false
+            });
+        }
+    }
+    if (currentStep >= 0) {
+        document.getElementById('agentEmotion').textContent = STEPS[currentStep].emotion;
+        typewriter(STEPS[currentStep].bubble);
+        const st = document.getElementById('agentStatus');
+        if (currentStep === STEP_COUNT-1) {
+            st.className = 'agent-status';
+            st.textContent = '✅ 完成';
+        } else {
+            st.className = 'agent-status working';
+            st.textContent = STEPS[currentStep].status;
+        }
+    }
+}
+
+function typewriter(text) {
+    const bubble = document.getElementById('agentBubble');
+    const dots = document.getElementById('typingDots');
+    let i = 0;
+    dots.style.display = 'inline-block';
+    bubble.textContent = '';
+    bubble.appendChild(dots);
+    clearInterval(window._tw);
+    window._tw = setInterval(()=>{
+        if (i >= text.length) {
+            clearInterval(window._tw);
+            dots.style.display = 'none';
+            return;
+        }
+        const t = text.slice(0, i+1);
+        bubble.textContent = t;
+        bubble.appendChild(dots);
+        i++;
+    }, 18);
+}
+
+function goToStep(idx) {
+    if (idx < -1 || idx >= STEP_COUNT) return;
+    currentStep = idx;
+    updateStepUI();
+}
+
+function nextStep() {
+    if (currentStep < STEP_COUNT-1) { goToStep(currentStep+1); return true; }
+    return false;
+}
+
+function prevStep() {
+    if (currentStep >= 0) goToStep(currentStep-1);
+}
+
+function resetDemo() {
+    stopAuto();
+    initPopulation();
+    currentGen = 0;
+    bestFitness = 0;
+    bestIndividual = null;
+    convergenceData = [];
+    goToStep(-1);
+    document.getElementById('agentEmotion').textContent = '🧬';
+    document.getElementById('agentStatus').className = 'agent-status';
+    document.getElementById('agentStatus').textContent = '待命中';
+    document.getElementById('agentBubble').innerHTML = '大家好！我是基因博士🧬！今天我将展示遗传算法如何模拟自然选择，通过编码、选择、交叉、变异来进化出最优的货物装载方案。点击"开始演示"开始探索吧！';
+    document.getElementById('startBtn').textContent = '▶ 开始演示';
+    document.getElementById('startBtn').className = 'demo-action-btn primary';
+}
+
+function startAutoDemo() {
+    if (autoTimer) { stopAuto(); return; }
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '⏸ 暂停演示';
+    btn.className = 'demo-action-btn accent';
+    if (currentStep >= STEP_COUNT-1) resetDemo();
+    if (currentStep < 0) goToStep(0);
+    const runOne = () => {
+        if (!nextStep()) { stopAuto(); }
+    };
+    autoTimer = setInterval(runOne, 4500);
+}
+
+function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '▶ 开始演示';
+    btn.className = 'demo-action-btn primary';
+}
+
+// init
+initPopulation();
+buildStepsTrack();
+updateStepUI();
+
+// KaTeX
+document.addEventListener('DOMContentLoaded', function(){
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>

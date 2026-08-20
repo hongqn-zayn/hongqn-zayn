@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>11.1 引言</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg-page: #F0F7FF; --bg-card: #ffffff; --bg-hover: #FFF3E0;
+    --text-primary: #2E3440; --text-secondary: #4C566A; --text-muted: #6B7280;
+    --border: #ECEFF1; --shadow: 0 2px 12px rgba(0,0,0,0.03);
+    --shadow-hover: 0 4px 20px rgba(0,0,0,0.05);
+    --radius: 16px; --radius-sm: 10px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    --color-blue: #1E88E5;
+}
+body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; display: flex; flex-direction: column; }
+.top-bar { height: 60px; background: white; display: flex; align-items: center; padding: 0 28px; justify-content: space-between; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.top-bar h2 { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+.top-bar-right { display: flex; align-items: center; gap: 12px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.content-area { flex: 1; overflow-y: auto; padding: 24px 40px; background: var(--bg-page); max-width: 1200px; margin: 0 auto; width: 100%; }
+.content-section { display: block; animation: fadeIn 0.4s ease-out; margin-bottom: 40px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.section-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid var(--border); }
+.section-header h3 { font-size: 34px; font-weight: 600; color: var(--text-primary); }
+.section-header p { font-size: 20px; color: var(--text-secondary); margin-top: 8px; }
+.subsection-title { font-size: 26px; color: var(--color-blue); margin-top: 28px; margin-bottom: 16px; padding-left: 14px; border-left: 5px solid var(--color-blue); }
+.feature-card { background: var(--bg-card); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; display: flex; gap: 24px; border: 2px solid var(--border); transition: var(--transition); box-shadow: var(--shadow); }
+.feature-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.feature-card.card-blue { background: linear-gradient(135deg, #E3F2FD 0%, #ffffff 50%); border: 2px solid #90CAF9; }
+.card-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; transition: transform 0.3s; }
+.feature-card:hover .card-icon { transform: scale(1.08); }
+.card-content { flex: 1; }
+.card-content h4 { font-size: 26px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.card-content p { font-size: 20px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<div class="main">
+    <div class="top-bar">
+        <h2>11.1 引言</h2>
+        <div class="top-bar-right">
+            <span style="font-size:14px; color:var(--text-muted);">全局搜索算法概述</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <span class="status-dot"></span>
+                <span style="font-size:14px;color:var(--text-secondary);font-weight:500;">系统就绪</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <div class="content-section">
+            <div class="section-header" style="border-color:#1E88E5;">
+                <h3>11.1 引言</h3>
+                <p>全局搜索算法 · 海洋研究 · 气象预测 · 港口调度 · 船舶路径规划</p>
+            </div>
+
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>🌍</span>
+                </div>
+                <div class="card-content">
+                    <h4>全局搜索算法</h4>
+                    <p>全局搜索算法是一种强大的优化手段，针对海洋研究、气象预测、港口调度和船舶路径规划等领域，寻求最优解或近似最优解，为实际需求提供优化与决策支持。</p>
+                </div>
+            </div>
+
+            <h4 class="subsection-title">1．海洋科学领域</h4>
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>🌊</span>
+                </div>
+                <div class="card-content">
+                    <p>海洋系统涵盖海流强度、风速变化、水深分布等海量参数与复杂约束。全局搜索算法可优化海洋观测站点布局、保护区划分及资源开发方案，推动海洋环境的保护与可持续利用。</p>
+                </div>
+            </div>
+
+            <h4 class="subsection-title">2．气象领域</h4>
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>🌤️</span>
+                </div>
+                <div class="card-content">
+                    <p>全局搜索算法能高效探寻最优模型参数，提升预报精准度。面对海量气象数据，可识别关键气象变量与潜在模式，为气候研究与灾害预警提供有力支持。</p>
+                </div>
+            </div>
+
+            <h4 class="subsection-title">3．港口领域</h4>
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>⚓</span>
+                </div>
+                <div class="card-content">
+                    <p>港口运营涉及停泊位置、装卸时间、泊位限制、设备调度等复杂约束与多元目标。全局搜索算法可探寻最优船舶调度策略、设施配置方案及航行路线规划，显著提升港口运营效率与资源利用率。</p>
+                </div>
+            </div>
+
+            <h4 class="subsection-title">4．船舶设计与性能分析领域</h4>
+            <div class="feature-card card-blue">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+                    <span>🚢</span>
+                </div>
+                <div class="card-content">
+                    <p>船舶设计涉及船体形状、推进系统、载荷分布、材料特性、航速续航等大量参数。全局搜索算法可系统性寻求最佳设计方案，优化性能指标，降低燃油消耗，实现经济与环保的双重优化。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>

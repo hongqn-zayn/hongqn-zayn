@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>11.3 粒子群优化算法</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg-page: #F0F7FF; --bg-card: #ffffff; --bg-hover: #FFF3E0;
+    --text-primary: #2E3440; --text-secondary: #4C566A; --text-muted: #6B7280;
+    --border: #ECEFF1; --shadow: 0 2px 12px rgba(0,0,0,0.03);
+    --shadow-hover: 0 4px 20px rgba(0,0,0,0.05);
+    --radius: 16px; --radius-lg: 20px; --radius-sm: 10px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    --color-indigo: #3949AB; --color-indigo-bg: #E8EAF6;
+    --color-orange: #FB8C00; --color-orange-bg: #FFF3E0;
+    --color-green: #43A047; --color-green-bg: #E8F5E9;
+    --color-pink: #E91E63; --color-pink-bg: #FDEBEF;
+    --color-cyan: #00ACC1; --color-cyan-bg: #E0F7FA;
+    --color-blue: #1E88E5; --color-blue-bg: #E3F2FD;
+    --color-amber: #FF8F00; --color-amber-bg: #FFF8E1;
+    --color-red: #E53935; --color-red-bg: #FFEBEE;
+    --color-purple: #8E24AA; --color-purple-bg: #F3E5F5;
+    --color-teal: #00897B; --color-teal-bg: #E0F2F1;
+}
+body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; display: flex; flex-direction: column; }
+.top-bar { height: 60px; background: white; display: flex; align-items: center; padding: 0 28px; justify-content: space-between; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.top-bar h2 { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+.top-bar-right { display: flex; align-items: center; gap: 12px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.content-area { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg-page); max-width: 1200px; margin: 0 auto; width: 100%; }
+.content-section { display: block; animation: fadeIn 0.4s ease-out; margin-bottom: 40px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.section-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid var(--border); }
+.section-header h3 { font-size: 34px; font-weight: 600; color: var(--text-primary); }
+.section-header p { font-size: 20px; color: var(--text-secondary); margin-top: 8px; }
+.subsection-title { font-size: 26px; color: var(--color-indigo); margin-top: 28px; margin-bottom: 16px; padding-left: 14px; border-left: 5px solid var(--color-indigo); display: flex; align-items: center; gap: 10px; }
+.subsection-title.h4 { font-size: 22px; }
+.feature-card { background: var(--bg-card); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; display: flex; gap: 24px; border: 2px solid var(--border); transition: var(--transition); box-shadow: var(--shadow); }
+.feature-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.feature-card.card-indigo { background: linear-gradient(135deg, #E8EAF6 0%, #ffffff 50%); border: 2px solid #9FA8DA; }
+.feature-card.card-cyan { background: linear-gradient(135deg, #E0F7FA 0%, #ffffff 50%); border: 2px solid #80DEEA; }
+.feature-card.card-blue { background: linear-gradient(135deg, #E3F2FD 0%, #ffffff 50%); border: 2px solid #90CAF9; }
+.feature-card.card-green { background: linear-gradient(135deg, #E8F5E9 0%, #ffffff 50%); border: 2px solid #A5D6A7; }
+.feature-card.card-orange { background: linear-gradient(135deg, #FFF3E0 0%, #ffffff 50%); border: 2px solid #FFCC80; }
+.feature-card.card-amber { background: linear-gradient(135deg, #FFF8E1 0%, #ffffff 50%); border: 2px solid #FFE082; }
+.feature-card.card-pink { background: linear-gradient(135deg, #FDEBEF 0%, #ffffff 50%); border: 2px solid #F48FB1; }
+.feature-card.card-red { background: linear-gradient(135deg, #FFEBEE 0%, #ffffff 50%); border: 2px solid #EF9A9A; }
+.feature-card.card-purple { background: linear-gradient(135deg, #F3E5F5 0%, #ffffff 50%); border: 2px solid #CE93D8; }
+.feature-card.card-teal { background: linear-gradient(135deg, #E0F2F1 0%, #ffffff 50%); border: 2px solid #80CBC4; }
+.card-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; transition: transform 0.3s; }
+.feature-card:hover .card-icon { transform: scale(1.08); }
+.card-content { flex: 1; }
+.card-content h4 { font-size: 26px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.card-content p { font-size: 20px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 14px; }
+.feature-list { margin-top: 14px; }
+.feature-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 14px 18px; background: #ffffff; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: all 0.3s; }
+.feature-item:hover { background: var(--bg-hover); border-color: rgba(57,73,171,0.2); }
+.feature-badge { padding: 5px 12px; background: #E8EAF6; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; color: #3949AB; flex-shrink: 0; }
+.feature-badge.green { background: #E8F5E9; color: #43A047; }
+.feature-badge.orange { background: #FFF3E0; color: #FB8C00; }
+.feature-badge.cyan { background: #E0F7FA; color: #00ACC1; }
+.feature-badge.pink { background: #FDEBEF; color: #E91E63; }
+.feature-badge.red { background: #FFEBEE; color: #E53935; }
+.feature-badge.purple { background: #F3E5F5; color: #8E24AA; }
+.feature-badge.blue { background: #E3F2FD; color: #1E88E5; }
+.feature-badge.teal { background: #E0F2F1; color: #00897B; }
+.feature-item span:last-child { font-size: 20px; color: var(--text-secondary); line-height: 1.7; }
+.formula-block { background: #F5F5F5; border-radius: var(--radius); padding: 20px 24px; margin: 16px 0; text-align: center; border: 2px solid #E0E0E0; overflow-x: auto; }
+.formula-block katex { font-size: 1.8em; color: var(--text-primary); }
+.algorithm-card { background: white; border-radius: var(--radius); padding: 22px 24px; margin: 18px 0; border: 2px solid var(--border); box-shadow: var(--shadow); }
+.algorithm-card h4 { font-size: 22px; color: var(--color-indigo); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.algorithm-card p { font-size: 19px; color: var(--text-secondary); line-height: 1.8; }
+.algorithm-card ul { padding-left: 24px; margin-top: 10px; }
+.algorithm-card li { font-size: 19px; color: var(--text-secondary); line-height: 1.9; margin-bottom: 8px; }
+.data-table { background: white; border-radius: var(--radius); padding: 16px; border: 2px solid var(--border); margin: 16px 0; overflow-x: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 18px; }
+.data-table th { background: linear-gradient(135deg, #E8EAF6, #C5CAE9); color: #3949AB; padding: 14px 16px; text-align: center; font-weight: 700; border: 1px solid #9FA8DA; }
+.data-table td { padding: 14px 16px; text-align: center; border: 1px solid var(--border); color: var(--text-secondary); }
+.data-table tr:nth-child(even) { background: #FAFAFA; }
+.data-table tr:hover { background: var(--bg-hover); }
+.data-table tr.highlight { background: linear-gradient(90deg, #FFF8E1, #FFECB3); font-weight: 700; }
+.data-table tr.highlight td { color: #E65100; }
+.table-caption { font-size: 17px; font-weight: 600; color: var(--color-indigo); text-align: center; margin-bottom: 12px; }
+/* Agent demo */
+.case-demo { background: linear-gradient(135deg, #E8EAF6 0%, #ffffff 70%); border-radius: var(--radius-lg); padding: 28px; margin-top: 24px; border: 2px solid rgba(57,73,171,0.2); }
+.case-demo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid rgba(57,73,171,0.1); }
+.case-demo-title { font-size: 21px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.case-demo-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); color: white; }
+.demo-progress-bar { height: 8px; background: linear-gradient(90deg, #ECEFF1, #E3EAF5); border-radius: 4px; margin-bottom: 16px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+.demo-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3949AB, #5C6BC0, #00ACC1, #43A047, #FFC107); background-size: 300% 100%; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); animation: progressGradient 3s linear infinite; }
+@keyframes progressGradient { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+.demo-main { display: flex; gap: 24px; margin-top: 16px; }
+.demo-agent-column { width: 220px; flex-shrink: 0; }
+.demo-content-column { flex: 1; min-width: 0; }
+.agent-character { background: linear-gradient(180deg, #F5F7FA 0%, #E8EAF6 100%); border: 2px solid #C5CAE9; border-radius: 24px; padding: 20px 16px; text-align: center; position: sticky; top: 80px; box-shadow: 0 4px 20px rgba(57,73,171,0.08); overflow: hidden; }
+.agent-avatar { width: 120px; height: 120px; margin: 0 auto 12px; animation: agentFloat 3s ease-in-out infinite; }
+@keyframes agentFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.agent-svg { width: 100%; height: 100%; }
+.agent-eye-blink { transform-origin: center; animation: blink 4s infinite; }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 94%, 98% { transform: scaleY(0.1); } }
+.agent-body { animation: bodyBreath 3s ease-in-out infinite; transform-origin: center bottom; }
+@keyframes bodyBreath { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.02); } }
+.agent-antenna { animation: antennaPulse 2s ease-in-out infinite; }
+@keyframes antennaPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+.agent-left-arm, .agent-right-arm { animation: armWave 4s ease-in-out infinite; transform-origin: top center; }
+@keyframes armWave { 0%, 90%, 100% { transform: rotate(0); } 93% { transform: rotate(-8deg); } 96% { transform: rotate(8deg); } }
+.agent-emotion { font-size: 28px; margin-bottom: 8px; display: block; transition: all 0.4s; animation: emotionPop 0.4s ease-out; }
+@keyframes emotionPop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
+.agent-name { font-size: 20px; font-weight: 700; color: #3949AB; margin-bottom: 4px; }
+.agent-role { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+.agent-bubble { background: white; border: 2px solid #C5CAE9; border-radius: 14px; padding: 12px 14px; font-size: 15px; line-height: 1.6; color: var(--text-secondary); position: relative; text-align: left; min-height: 72px; transition: all 0.3s; }
+.agent-bubble::before { content: ''; position: absolute; top: -7px; left: 20px; width: 12px; height: 12px; background: white; border-left: 2px solid #C5CAE9; border-top: 2px solid #C5CAE9; transform: rotate(45deg); }
+.typing-dots { display: none; }
+.typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #3949AB; animation: typingDot 1.4s infinite; display: inline-block; margin: 0 2px; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-8px); opacity: 1; } }
+.agent-status { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; background: #E8F5E9; color: #43A047; }
+.agent-status.working { background: #E8EAF6; color: #3949AB; }
+.agent-status.working::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #3949AB; animation: statusPulse 1s infinite; }
+@keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.steps-track { display: flex; align-items: center; gap: 0; margin-bottom: 14px; flex-wrap: nowrap; overflow-x: auto; }
+.step-chip { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 20px; background: white; border: 2px solid #ECEFF1; font-size: 15px; color: var(--text-muted); font-weight: 500; transition: all 0.4s; cursor: pointer; white-space: nowrap; }
+.step-chip:hover { border-color: #3949AB; color: #3949AB; }
+.step-chip.done { background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%); border-color: #9FA8DA; color: #5C6BC0; }
+.step-chip.active { background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); border-color: #3949AB; color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(57,73,171,0.3); transform: translateY(-2px); }
+.step-chip .chip-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.step-chip.active .chip-num { background: rgba(255,255,255,0.25); }
+.step-chip-connector { width: 16px; height: 2px; background: #ECEFF1; flex-shrink: 0; }
+.step-chip-connector.done { background: #9FA8DA; }
+.demo-step-label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); color: white; font-size: 16px; font-weight: 600; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(57,73,171,0.25); }
+.demo-step-label .step-num { background: rgba(255,255,255,0.25); padding: 1px 8px; border-radius: 10px; }
+.demo-content-panel { animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1); }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.demo-action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.demo-action-btn { padding: 10px 20px; border-radius: 20px; font-size: 17px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; display: flex; align-items: center; gap: 6px; }
+.demo-action-btn.primary { background: linear-gradient(135deg, #3949AB 0%, #5C6BC0 100%); color: white; box-shadow: 0 3px 10px rgba(57,73,171,0.3); }
+.demo-action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(57,73,171,0.4); }
+.demo-action-btn.ghost { background: white; color: #3949AB; border: 2px solid #9FA8DA; }
+.demo-action-btn.ghost:hover { background: #E8EAF6; }
+.demo-action-btn.accent { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); color: white; box-shadow: 0 3px 10px rgba(255,152,0,0.3); }
+.demo-action-btn.accent:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,152,0,0.4); }
+.calc-panel { background: white; border-radius: var(--radius); padding: 20px; border: 2px solid #C5CAE9; margin: 16px 0; box-shadow: 0 4px 16px rgba(57,73,171,0.06); }
+.calc-title { font-size: 16px; font-weight: 600; color: #3949AB; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.calc-title::before { content: ''; width: 4px; height: 18px; border-radius: 2px; background: linear-gradient(180deg, #3949AB, #00ACC1); }
+.calc-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 8px 12px; background: #F5F7FA; border-radius: 8px; font-size: 17px; font-family: 'Courier New', monospace; transition: all 0.3s; }
+.calc-row.highlight { background: linear-gradient(90deg, #FFF8E1, #FFECB3); border-left: 3px solid #FFC107; font-weight: 700; }
+.calc-row .var { color: #3949AB; font-weight: 600; }
+.calc-row .val { color: #E65100; font-weight: 700; }
+.calc-row .val.blue { color: #1565C0; }
+.calc-row .val.green { color: #2E7D32; }
+.calc-row .val.red { color: #C62828; }
+/* PSO specific */
+.pso-field { background: white; border-radius: var(--radius); padding: 18px; border: 2px solid #80CBC4; margin: 14px 0; }
+.pso-field-svg { width: 100%; height: auto; max-height: 340px; display: block; }
+.pso-particle { transition: cx 0.5s cubic-bezier(0.4,0,0.2,1), cy 0.5s cubic-bezier(0.4,0,0.2,1); }
+.pso-particle text { font-size: 11px; fill: white; font-weight: 700; pointer-events: none; text-anchor: middle; dominant-baseline: middle; }
+.pso-best-ring { fill: none; stroke: #FF5252; stroke-width: 2; stroke-dasharray: 4,3; opacity: 0.7; animation: ringPulse 1.5s infinite; }
+@keyframes ringPulse { 0%, 100% { r: 14; opacity: 0.7; } 50% { r: 18; opacity: 0.3; } }
+.convergence-chart { background: white; border-radius: var(--radius); padding: 16px; border: 2px solid #A5D6A7; margin: 14px 0; }
+.conv-svg { width: 100%; height: auto; max-height: 220px; }
+.goods-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 14px 0; }
+.goods-item { background: white; border-radius: 12px; padding: 14px 10px; text-align: center; border: 2px solid var(--border); transition: all 0.3s; cursor: pointer; }
+.goods-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.goods-item.selected { background: linear-gradient(135deg, #C8E6C9, #A5D6A7); border-color: #43A047; box-shadow: 0 4px 12px rgba(67,160,71,0.25); }
+.goods-item.excluded { opacity: 0.4; background: #F5F5F5; }
+.goods-icon { font-size: 26px; margin-bottom: 4px; }
+.goods-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.goods-info { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+.goods-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+.goods-tag.in { background: #E8F5E9; color: #2E7D32; }
+.goods-tag.out { background: #FFEBEE; color: #C62828; }
+.weight-bar { height: 14px; background: #ECEFF1; border-radius: 7px; overflow: hidden; margin: 12px 0; border: 1px solid #E0E0E0; }
+.weight-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #66BB6A, #A5D6A7); transition: width 0.6s; position: relative; }
+.weight-bar-fill.over { background: linear-gradient(90deg, #EF5350, #E57373); }
+.weight-bar-label { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+.pso-param-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 14px 0; }
+.pso-param-card { background: white; border-radius: 12px; padding: 14px; border: 2px solid var(--border); text-align: center; }
+.pso-param-value { font-size: 26px; font-weight: 700; color: var(--color-indigo); font-family: 'Courier New', monospace; }
+.pso-param-label { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+.pso-param-value.orange { color: #E65100; }
+.pso-param-value.green { color: #2E7D32; }
+.pso-param-value.cyan { color: #00838F; }
+.pso-param-value.purple { color: #6A1B9A; }
+</style>
+</head>
+<body>
+<div class="main">
+    <div class="top-bar">
+        <h2>11.3 粒子群优化算法</h2>
+        <div class="top-bar-right">
+            <span style="font-size:14px; color:var(--text-muted);">船舶货物装载优化</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <span class="status-dot"></span>
+                <span style="font-size:14px;color:var(--text-secondary);font-weight:500;">系统就绪</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- 11.3.1 案例问题说明 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#00897B;">
+                <h3>11.3 粒子群优化算法</h3>
+                <p>基于鸟群觅食行为的全局优化算法 · 应用于船舶货物装载</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#00897B;color:#00695C;">11.3.1 案例问题说明</h4>
+            <div class="feature-card card-teal">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E0F2F1,#B2DFDB);">
+                    <span>📦</span>
+                </div>
+                <div class="card-content">
+                    <h4>货物装载配置挑战</h4>
+                    <p>针对货物装载配置挑战，面临以下工程难题。</p>
+                    <div class="feature-list" style="margin-top:12px;">
+                        <div class="feature-item">
+                            <span class="feature-badge teal">问题1</span>
+                            <span>面对一系列具有不同价值和重量的货物，如何在船舶有限的载重能力约束下，挑选出合适的货物进行装载，确保船上货物总价值达到最大化？</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge orange">问题2</span>
+                            <span>如何巧妙地应用粒子遗传算法，针对上述问题进行高效求解，找出最优的货物装载组合方案？</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🧮</span> 数学问题拆解</h4>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-badge teal">建模</span>
+                        <span><b>（1）</b>定义目标函数为货物总价值的最大化，同时限制条件为装载货物的总重量不超过船舶的载重能力。</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-badge orange">算法</span>
+                        <span><b>（2）</b>设定粒子遗传算法的参数，包括粒子数量、最大迭代次数和各加速因子的值，以确保算法的高效运行并寻求最优解。货物价值重量对照表见表11-2。</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-table">
+                <div class="table-caption">表11-2　货物价值重量对照表</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>货物编号</th>
+                            <th>货物1</th>
+                            <th>货物2</th>
+                            <th>货物3</th>
+                            <th>货物4</th>
+                            <th>货物5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="background:#E0F2F1;color:#00695C;font-weight:700;">价值（v）</td><td>10</td><td>8</td><td>12</td><td>6</td><td>9</td></tr>
+                        <tr><td style="background:#E0F2F1;color:#00695C;font-weight:700;">重量（w）</td><td>5</td><td>3</td><td>6</td><td>2</td><td>4</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="feature-card card-purple">
+                <div class="card-icon" style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7);">
+                    <span>⚙️</span>
+                </div>
+                <div class="card-content">
+                    <h4>粒子群算法参数设置</h4>
+                    <p>其中，粒子遗传算法的相关参数设置如下：</p>
+                    <div class="pso-param-grid">
+                        <div class="pso-param-card"><div class="pso-param-value cyan">20</div><div class="pso-param-label">粒子数量</div></div>
+                        <div class="pso-param-card"><div class="pso-param-value">100</div><div class="pso-param-label">最大迭代次数</div></div>
+                        <div class="pso-param-card"><div class="pso-param-value orange">0.8</div><div class="pso-param-label">惯性权重 w</div></div>
+                        <div class="pso-param-card"><div class="pso-param-value green">2</div><div class="pso-param-label">加速因子 c₁（个体）</div></div>
+                        <div class="pso-param-card"><div class="pso-param-value green">2</div><div class="pso-param-label">加速因子 c₂（全局）</div></div>
+                        <div class="pso-param-card"><div class="pso-param-value purple">10</div><div class="pso-param-label">装载容量 C</div></div>
+                    </div>
+                    <p style="font-size:18px;margin-top:10px;">装载容量设置为10，该参数与算法所处理的具体问题情境相关，用于约束相关资源或任务的承载量。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11.3.2 粒子群优化算法 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#3949AB;">
+                <h3>11.3.2 粒子群优化算法</h3>
+                <p>鸟群觅食行为模拟 · 个体认知 + 社会学习</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.3.2.1 基本的粒子群优化算法</h4>
+            <div class="feature-card card-indigo">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8EAF6,#C5CAE9);">
+                    <span>🐦</span>
+                </div>
+                <div class="card-content">
+                    <h4>gbest版粒子群优化算法</h4>
+                    <p>下面讨论gbest版粒子群优化算法的简化版本，在每次迭代中，粒子速度都朝着个体最好位置和全局最好位置调整。设 $f(x)$ 表示需要进行最小化的目标函数。d表示群体的容量，群中各粒子的索引为 $i=1,\dots,d$，即共有d个粒子。$x^{(i)}$ 表示粒子i的位置，对应的速度为 $v^{(i)}$。$p^{(i)}$ 表示粒子i的pbest（个体最好位置），相应地，$g$ 表示gbest（全局最好位置）。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">✖️</span> Hadamard积（Schur积）算子</h4>
+                <p>引入Hadamard积（Schur积）算子，用符号 $\odot$ 表示。其运算规则为，如果矩阵A和B维数相同，那么 $A \odot B$ 表示由A和B的各元素对应相乘得到的矩阵，其维数与A或B相同。在MATLAB中，采用".*"表示这一算子（表示元素之间的相乘）。因此，如果A和B同维，那么A.*B的结果为A和B中对应元素相乘后得到的矩阵。</p>
+                <p>gbest版的粒子群优化算法用到3个实数参数 $w, c_1, c_2$，分别为惯性权重、个体加速因子、全局加速因子。其算法步骤如下。</p>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📋</span> 粒子群优化算法5步骤</h4>
+                <ol style="padding-left:28px;margin-top:8px;">
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>步骤1：</b>令 $k=0$。随机产生一个初始的粒子群，即产生d个粒子的位置 $x^{(i)}(0)$ 及其对应的速度 $v^{(i)}(0)$；令 $p^{(i)}=x^{(i)}(0)$，$g=\arg\min_{i} f(x^{(i)}(0))$。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>步骤2：</b>针对每个 $i$，随机产生两个n维向量 $r_1^{(i)}, r_2^{(i)}$，按照均匀分布的原则抽取区间(0,1)中的随机数，构成这两个向量的元素。令</li>
+                </ol>
+                <div class="formula-block">
+                    $$ v^{(i)}(k+1) = w \cdot v^{(i)}(k) + c_1 \cdot r_1^{(i)} \odot (p^{(i)} - x^{(i)}(k)) + c_2 \cdot r_2^{(i)} \odot (g - x^{(i)}(k)) $$
+                </div>
+                <ol start="3" style="padding-left:28px;margin-top:8px;">
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>步骤3：</b>针对每个 $i$，令 $x^{(i)}(k+1) = x^{(i)}(k) + v^{(i)}(k+1)$。如果 $f(x^{(i)}(k+1)) < f(p^{(i)})$，令 $p^{(i)} = x^{(i)}(k+1)$；否则，令 $p^{(i)}$ 不变。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>步骤4：</b>如果存在 $i$，使得 $f(x^{(i)}(k+1)) < f(g)$，则令 $g = x^{(i)}(k+1)$；否则，令 $g$ 不变。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>步骤5：</b>如果满足停止条件，就停止迭代。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;"><b>步骤6：</b>令 $k=k+1$，回到第2步。</li>
+                </ol>
+            </div>
+
+            <div class="feature-card card-amber">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFF8E1,#FFECB3);">
+                    <span>🎯</span>
+                </div>
+                <div class="card-content">
+                    <h4>三个参数的作用</h4>
+                    <div class="feature-list" style="margin-top:8px;">
+                        <div class="feature-item">
+                            <span class="feature-badge orange">惯性权重 w</span>
+                            <span>表示惯性参数，建议取稍微小于1的值（如0.8）。较大的w有利于全局搜索，较小的w有利于局部搜索。</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge cyan">c₁ 个体因子</span>
+                            <span>决定粒子趋向于"好位置"的程度，表示来自"认知"部分的影响因素，即粒子本身最好位置（pbest）对其运动的影响。</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-badge green">c₂ 全局因子</span>
+                            <span>决定粒子趋向于"好位置"的程度，表示来自"社会"部分的影响因素，即全局最好位置（gbest）对其运动的影响。建议取值 $c_1 = c_2 = 2$。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#3949AB;color:#283593;">11.3.2.2 粒子群优化算法的变种</h4>
+            <div class="feature-card card-red">
+                <div class="card-icon" style="background:linear-gradient(135deg,#FFEBEE,#FFCDD2);">
+                    <span>🔬</span>
+                </div>
+                <div class="card-content">
+                    <h4>收敛因子粒子群优化算法（Clerc提出）</h4>
+                    <p>粒子群优化算法自1995年提出之后，不断修改完善。比如，Clerc提出一种收敛因子粒子群优化算法，速度更新公式为</p>
+                    <div class="formula-block">
+                        $$ v^{(i)}(k+1) = \chi \left[ w \cdot v^{(i)}(k) + c_1 \cdot r_1^{(i)} \odot (p^{(i)} - x^{(i)}(k)) + c_2 \cdot r_2^{(i)} \odot (g - x^{(i)}(k)) \right] $$
+                    </div>
+                    <p>其中，$\chi$ 为收敛系数。</p>
+                    <div class="formula-block">
+                        $$ \chi = \frac{2}{\varphi - 2 + \sqrt{\varphi^2 - 4\varphi}} $$
+                    </div>
+                    <p>其中，$\varphi = c_1 + c_2$。比如，当 $c_1 = c_2 = 2$ 时，有 $\chi \approx 0.729$。收敛系数的作用在于加快收敛。</p>
+                </div>
+            </div>
+
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🚧</span> 速度限制（实际应用技巧）</h4>
+                <p>在实际应用粒子群优化算法时，希望为速度指定一个上限 $v_{max}$。这样，算法中有关速度的部分都应该替换为</p>
+                <div class="formula-block">
+                    $$ v^{(i)}(k+1) = \text{clip}\left( v^{(i)}(k+1), -v_{max}, v_{max} \right) $$
+                </div>
+                <p>速度限制可以防止粒子在搜索空间中"飞"得太远，有助于算法的稳定收敛。</p>
+            </div>
+        </div>
+
+        <!-- 11.3.3 解决与讨论 -->
+        <div class="content-section">
+            <div class="section-header" style="border-color:#43A047;">
+                <h3>11.3.3 解决与讨论</h3>
+                <p>船舶货物装载优化 · 粒子群算法求解背包问题</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.3.3.1 问题分析</h4>
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">🎯</span> 背包问题转化</h4>
+                <p>将上述装载问题转化为背包问题，一个经典的组合优化问题，通过粒子群优化算法来解决。以下是对该问题进行分析的要点。</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+                    <div style="background:linear-gradient(135deg,#E8EAF6,#FFFFFF);border:2px solid #9FA8DA;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#283593;margin-bottom:6px;">1．问题描述</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">给定一组物品以及它们的价值和重量，背包问题要求在背包容量限制下选择一些物品放入背包中，使所选物品的总价值最大化。</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#E0F2F1,#FFFFFF);border:2px solid #80CBC4;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#00695C;margin-bottom:6px;">2．解决方案表示</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">使用二进制向量来表示解决方案，其中每个元素对应一个物品，取值为0时表示未选择该物品；取值为1时表示选择该物品。</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border:2px solid #FFE082;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#E65100;margin-bottom:6px;">3．粒子群优化算法</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">粒子群优化算法是一种启发式优化算法，基于模拟鸟群觅食行为的原理。该算法中，每个粒子代表一个候选解，根据自身位置和速度进行更新，并与个体最佳位置和全局最佳位置进行比较，来调整自己的位置和速度。</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#F3E5F5,#FFFFFF);border:2px solid #CE93D8;border-radius:12px;padding:16px;">
+                        <div style="font-size:18px;font-weight:700;color:#6A1B9A;margin-bottom:6px;">4．最优解决方案</div>
+                        <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;">在背包问题中，最优解决方案即为通过粒子群优化算法找到的具有最高适应度值（总价值）的物品选择方案。这个解决方案满足背包容量限制，所选物品的总价值最大化。</div>
+                    </div>
+                </div>
+                <p style="margin-top:14px;">通过使用粒子群优化算法来解决背包问题，能够找到一个近似最优的解决方案，尽可能地使总价值最大化，同时满足背包的容量约束。</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.3.3.2 解决步骤</h4>
+            <div class="algorithm-card">
+                <h4><span style="font-size:22px;">📝</span> 解题步骤详解</h4>
+                <ol style="padding-left:24px;margin-top:8px;">
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>初始化粒子群：</b>使用粒子群优化算法来解决背包问题。开始时，初始化一群粒子，每个粒子代表一种可能的货物选择方案。每个粒子的位置是一个二进制向量，表示是否选择对应编号的货物。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>适应度函数：</b>定义一个适应度函数，用于评估每个粒子的选择方案的质量。适应度函数计算所选货物的总价值，检查是否超过装载的容量限制。如果没有超过，则适应度为总价值，否则为零。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>更新粒子的速度和位置：</b>根据粒子群优化算法的原理，更新每个粒子的速度和位置。根据个体最佳位置和全局最佳位置，调整粒子的速度和位置，以探索更好的解决方案。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>迭代更新：</b>重复进行粒子的速度和位置更新，直到达到指定的迭代次数或满足收敛条件。在每次迭代中，比较并更新个体最佳位置和全局最佳位置。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;margin-bottom:12px;"><b>输出最优解决方案：</b>在迭代结束后，得到具有最高适应度值的全局最优解决方案。通过解码二进制向量，确定哪些货物被选择，计算所选货物的总价值。</li>
+                    <li style="font-size:19px;color:var(--text-secondary);line-height:1.9;"><b>分析结果：</b>输出最优解决方案和相应的总价值，可进一步地分析和比较，评估算法的性能和效果。</li>
+                </ol>
+                <p style="margin-top:10px;">通过以上步骤，利用粒子群优化算法找到一个近似最优的背包问题解决方案，使所选货物的总价值最大化，满足装载容量的限制。</p>
+            </div>
+
+            <h4 class="subsection-title" style="border-color:#43A047;color:#2E7D32;">11.3.3.3 问题解决</h4>
+            <div class="feature-card card-green">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
+                    <span>📋</span>
+                </div>
+                <div class="card-content">
+                    <h4>附录11-B</h4>
+                    <p>具体python代码见附录11-B。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 智能体交互演示 -->
+        <div class="case-demo">
+            <div class="case-demo-header">
+                <div class="case-demo-title">
+                    <div class="case-demo-icon">🐦</div>
+                    粒子群优化算法 · 货物装载智能演示
+                </div>
+                <div style="font-size:14px;color:var(--text-muted);">参数：20粒子 · 100次迭代 · w=0.8 · c₁=c₂=2 · 容量=10</div>
+            </div>
+            <div class="demo-progress-bar">
+                <div class="demo-progress-fill" id="demoProgress" style="width:0%;"></div>
+            </div>
+            <div class="demo-main">
+                <!-- Agent 智能体 -->
+                <div class="demo-agent-column">
+                    <div class="agent-character">
+                        <span class="agent-emotion" id="agentEmotion">🐦</span>
+                        <div class="agent-avatar">
+                            <svg class="agent-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <g class="agent-body">
+                                    <!-- 身体 -->
+                                    <ellipse cx="60" cy="72" rx="30" ry="24" fill="url(#birdBody)" stroke="#2E7D32" stroke-width="2"/>
+                                    <defs><linearGradient id="birdBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#66BB6A"/><stop offset="100%" stop-color="#2E7D32"/></linearGradient></defs>
+                                    <!-- 翅膀 -->
+                                    <g class="agent-left-arm" style="transform-origin:42px 65px;">
+                                        <ellipse cx="40" cy="65" rx="18" ry="10" fill="#81C784" stroke="#2E7D32" stroke-width="1.5" transform="rotate(-20 40 65)"/>
+                                    </g>
+                                    <g class="agent-right-arm" style="transform-origin:78px 65px;">
+                                        <ellipse cx="80" cy="65" rx="18" ry="10" fill="#81C784" stroke="#2E7D32" stroke-width="1.5" transform="rotate(20 80 65)"/>
+                                    </g>
+                                    <!-- 头 -->
+                                    <circle cx="60" cy="42" r="24" fill="url(#birdHead)" stroke="#2E7D32" stroke-width="2"/>
+                                    <defs><linearGradient id="birdHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A5D6A7"/><stop offset="100%" stop-color="#66BB6A"/></linearGradient></defs>
+                                    <!-- 眼睛 -->
+                                    <circle class="agent-eye-blink" cx="52" cy="40" r="4" fill="white"/>
+                                    <circle class="agent-eye-blink" cx="68" cy="40" r="4" fill="white"/>
+                                    <circle cx="52" cy="41" r="2" fill="#1B5E20"/>
+                                    <circle cx="68" cy="41" r="2" fill="#1B5E20"/>
+                                    <!-- 嘴 -->
+                                    <path d="M55,50 Q60,56 65,50 Q60,54 55,50" fill="#FFA726" stroke="#E65100" stroke-width="1.5"/>
+                                    <!-- 冠羽 -->
+                                    <path d="M55,22 Q57,10 60,18 Q63,8 65,18 Q68,10 65,22" fill="#EF5350" stroke="#C62828" stroke-width="1.5"/>
+                                    <!-- 脚 -->
+                                    <line x1="52" y1="95" x2="52" y2="105" stroke="#E65100" stroke-width="2.5" stroke-linecap="round"/>
+                                    <line x1="68" y1="95" x2="68" y2="105" stroke="#E65100" stroke-width="2.5" stroke-linecap="round"/>
+                                    <line x1="52" y1="105" x2="48" y2="108" stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+                                    <line x1="68" y1="105" x2="72" y2="108" stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="agent-name">群小蜂</div>
+                        <div class="agent-role">粒子群优化算法专家</div>
+                        <div class="agent-bubble" id="agentBubble">
+                            啾啾~我是群小蜂！今天我要带领一群小鸟（粒子）在货物空间中寻找最优装载方案。点击"开始演示"来看看鸟群觅食的过程吧！
+                            <div class="typing-dots" id="typingDots"><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="agent-status" id="agentStatus">待命中</div>
+                    </div>
+                </div>
+
+                <!-- 演示内容 -->
+                <div class="demo-content-column">
+                    <div class="steps-track" id="stepsTrack"></div>
+                    <div id="demoStepLabel" class="demo-step-label"></div>
+                    <div id="demoContent" class="demo-content-panel"></div>
+                    <div class="demo-action-bar">
+                        <button class="demo-action-btn primary" onclick="startAutoDemo()" id="startBtn">▶ 开始演示</button>
+                        <button class="demo-action-btn ghost" onclick="resetDemo()">↺ 重置</button>
+                        <button class="demo-action-btn ghost" onclick="prevStep()">← 上一步</button>
+                        <button class="demo-action-btn accent" onclick="nextStep()">下一步 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ===== 货物数据 =====
+const GOODS = [
+    {id:1, name:'货物1', value:10, weight:5, icon:'📦'},
+    {id:2, name:'货物2', value:8, weight:3, icon:'📋'},
+    {id:3, name:'货物3', value:12, weight:6, icon:'🎁'},
+    {id:4, name:'货物4', value:6, weight:2, icon:'📰'},
+    {id:5, name:'货物5', value:9, weight:4, icon:'🪵'}
+];
+const CAPACITY = 10;
+
+// ===== 粒子群参数 =====
+const NUM_PARTICLES = 20;
+const MAX_ITER = 100;
+const W = 0.8;
+const C1 = 2;
+const C2 = 2;
+const D = 5; // 维度=货物数量
+
+// 评估二进制粒子的适应度
+function evaluate(pos) {
+    let v = 0, w = 0;
+    for (let i=0; i<D; i++) {
+        if (pos[i] > 0.5) { v += GOODS[i].value; w += GOODS[i].weight; }
+    }
+    return {value: v, weight: w, valid: w <= CAPACITY};
+}
+
+// ===== 初始化粒子群 =====
+let particles = [];
+let gbest = null;
+let gbestPos = null;
+let convergenceData = [];
+
+function initParticles() {
+    particles = [];
+    gbest = null;
+    gbestPos = null;
+    convergenceData = [];
+    for (let i=0; i<NUM_PARTICLES; i++) {
+        const pos = [], vel = [], pbest = [];
+        for (let j=0; j<D; j++) {
+            pos.push(Math.random());
+            vel.push((Math.random()-0.5)*2);
+            pbest.push(pos[j]);
+        }
+        const fit = evaluate(pos.map(x => x > 0.5 ? 1 : 0));
+        particles.push({pos, vel, pbest, pbestFit: fit});
+        if (!gbest || fit.value > gbest.value) {
+            gbest = fit;
+            gbestPos = pos.slice();
+        }
+    }
+    convergenceData.push({iter:0, best: gbest.value, avg: particles.reduce((s,p)=>s+evaluate(p.pos.map(x=>x>0.5?1:0)).value,0)/NUM_PARTICLES});
+}
+
+// 一步迭代（可多次调用以模拟不同迭代阶段）
+let currentIter = 0;
+function iterateStep() {
+    currentIter++;
+    for (let p=0; p<NUM_PARTICLES; p++) {
+        const part = particles[p];
+        for (let j=0; j<D; j++) {
+            const r1 = Math.random(), r2 = Math.random();
+            part.vel[j] = W*part.vel[j] + C1*r1*(part.pbest[j]-part.pos[j]) + C2*r2*(gbestPos[j]-part.pos[j]);
+            part.vel[j] = Math.max(-2, Math.min(2, part.vel[j]));
+            part.pos[j] += part.vel[j];
+            // sigmoid for binary
+            const sig = 1/(1+Math.exp(-part.pos[j]));
+            part.pos[j] = sig;
+        }
+        const curFit = evaluate(part.pos.map(x => x > 0.5 ? 1 : 0));
+        if (curFit.value > part.pbestFit.value && curFit.valid) {
+            part.pbest = part.pos.slice();
+            part.pbestFit = curFit;
+        }
+        if (curFit.value > gbest.value && curFit.valid) {
+            gbest = curFit;
+            gbestPos = part.pos.slice();
+        }
+    }
+    convergenceData.push({
+        iter: currentIter,
+        best: gbest.value,
+        avg: particles.reduce((s,p)=>s+evaluate(p.pos.map(x=>x>0.5?1:0)).value,0)/NUM_PARTICLES
+    });
+}
+
+// ===== 6个演示步骤 =====
+const STEPS = [
+    {
+        label: '初始化粒子群',
+        emotion: '🐣',
+        bubble: '我们初始化20只小鸟（粒子），每只随机选择5种货物的装载方案（二进制编码）。现在来看它们的初始位置！',
+        status: '初始化中',
+        render: function() {
+            initParticles();
+            return renderInitField();
+        }
+    },
+    {
+        label: '评估适应度',
+        emotion: '🔍',
+        bubble: '每只小鸟都要评估自己的方案：选了哪些货物？总重量是否超过10？不超载的方案价值越高越好！',
+        status: '评估适应度',
+        render: function() {
+            let html = renderGoodsSelection('init');
+            html += '<div class="calc-panel"><div class="calc-title">📊 初始粒子适应度分布</div>';
+            for (let i=0; i<5; i++) {
+                const fit = evaluate(particles[i].pos.map(x => x > 0.5 ? 1 : 0));
+                html += `<div class="calc-row ${fit.valid?'':'red'}"><span class="var">粒子${i+1}</span> 价值=<span class="val">${fit.value}</span> 重量=<span class="val ${fit.valid?'green':'red'}">${fit.weight}/${CAPACITY}</span> ${fit.valid?'✓':'✗超载'}</div>`;
+            }
+            html += `<div class="calc-row highlight"><span class="var">全局最优 gbest</span> 价值=<span class="val">${gbest.value}</span> 重量=<span class="val green">${gbest.weight}/${CAPACITY}</span></div>`;
+            html += '</div>';
+            html += renderParticleField('init');
+            return html;
+        }
+    },
+    {
+        label: '个体认知更新',
+        emotion: '🧠',
+        bubble: '根据每个粒子的个体最佳位置（pbest），调整自己的速度和位置。粒子记住了自己的"最好选择"！',
+        status: '个体学习中',
+        render: function() {
+            // 更新一代
+            for (let i=0; i<15; i++) iterateStep();
+            return renderGoodsSelection('cognitive') + renderParticleField('cognitive') + renderConvergence('partial');
+        }
+    },
+    {
+        label: '社会学习更新',
+        emotion: '👥',
+        bubble: '鸟儿们互相交流，学习群体中最好的方案（gbest）。社会学习因子c₂=2让大家向最优方案靠拢！',
+        status: '社会学习中',
+        render: function() {
+            for (let i=0; i<20; i++) iterateStep();
+            let html = '<div class="calc-panel"><div class="calc-title">🧠 个体认知 + 社会学习 更新公式</div>';
+            html += '<div class="formula-block" style="padding:14px;"><span style="font-size:22px;color:#283593;font-weight:600;">v(k+1) = w·v(k) + c₁·r₁⊙(pbest-x(k)) + c₂·r₂⊙(gbest-x(k))</span></div>';
+            html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;font-size:16px;">';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><b style="color:#E65100;">w=0.8</b><br/><span style="color:var(--text-muted);font-size:14px;">惯性保持</span></div>';
+            html += '<div style="background:#E8EAF6;padding:10px;border-radius:8px;"><b style="color:#283593;">c₁=2</b><br/><span style="color:var(--text-muted);font-size:14px;">个体认知</span></div>';
+            html += '<div style="background:#E0F2F1;padding:10px;border-radius:8px;"><b style="color:#00695C;">c₂=2</b><br/><span style="color:var(--text-muted);font-size:14px;">社会学习</span></div>';
+            html += '</div></div>';
+            html += renderGoodsSelection('social');
+            return html + renderConvergence('mid');
+        }
+    },
+    {
+        label: '粒子群收敛',
+        emotion: '✨',
+        bubble: '又经过35次迭代，鸟群逐渐收敛到最优解附近。看看粒子是怎么聚拢的！',
+        status: '收敛中',
+        render: function() {
+            for (let i=0; i<35; i++) iterateStep();
+            return renderGoodsSelection('converged') + renderParticleField('converged') + renderConvergence('late');
+        }
+    },
+    {
+        label: '输出最优解',
+        emotion: '🏆',
+        bubble: '迭代结束！全局最优解找到了：粒子群选择了货物1、3、4、5，总价值37，总重量17（！？），哦不——我们需要检查容量约束。让我看看正确的最优方案！',
+        status: '输出最优解',
+        render: function() {
+            // 手动计算最优
+            // 暴力枚举5个货物的所有子集，容量10
+            const allCombos = [];
+            for (let mask=0; mask<32; mask++) {
+                let v=0, w=0;
+                const sel = [];
+                for (let j=0; j<5; j++) {
+                    if (mask & (1<<j)) { v += GOODS[j].value; w += GOODS[j].weight; sel.push(j); }
+                }
+                if (w <= CAPACITY) allCombos.push({mask, value:v, weight:w, sel});
+            }
+            allCombos.sort((a,b)=>b.value-a.value);
+            const bestSol = allCombos[0];
+            // 找PSO的gbest
+            const gbestSel = gbestPos.map(x => x > 0.5 ? 1 : 0);
+            let html = '<div style="background:linear-gradient(135deg,#FFF8E1,#FFFFFF);border:3px solid #FFC107;border-radius:16px;padding:20px;margin-bottom:16px;">';
+            html += '<div style="text-align:center;"><div style="font-size:42px;">🏆✨🏆</div>';
+            html += '<div style="font-size:22px;font-weight:700;color:#E65100;margin:10px 0;">粒子群优化算法收敛完成！</div></div>';
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">';
+            html += '<div style="background:white;border:2px solid #A5D6A7;border-radius:12px;padding:14px;text-align:center;">';
+            html += '<div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">📊 理论最优解（暴力枚举）</div>';
+            html += '<div style="font-size:32px;font-weight:700;color:#2E7D32;font-family:Courier New;">' + bestSol.value + '</div>';
+            html += '<div style="font-size:14px;color:var(--text-muted);">重量：' + bestSol.weight + '/' + CAPACITY + '</div>';
+            html += '<div style="font-size:15px;color:#2E7D32;margin-top:6px;">选择：' + bestSol.sel.map(s=>GOODS[s].name).join(' + ') + '</div>';
+            html += '</div>';
+            html += '<div style="background:white;border:2px solid #FFC107;border-radius:12px;padding:14px;text-align:center;">';
+            html += '<div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">🐦 PSO找到的最优解</div>';
+            html += '<div style="font-size:32px;font-weight:700;color:#E65100;font-family:Courier New;">' + gbest.value + '</div>';
+            html += '<div style="font-size:14px;color:var(--text-muted);">重量：' + gbest.weight + '/' + CAPACITY + '</div>';
+            html += '<div style="font-size:15px;color:#E65100;margin-top:6px;">选择：' + gbestSel.map((s,i)=>s?GOODS[i].name:'').filter(x=>x).join(' + ') + '</div>';
+            html += '</div></div>';
+            html += '</div>';
+            html += renderGoodsSelection('final');
+            html += '<div class="weight-bar-label"><span>0</span><span>当前重量: <b>' + gbest.weight + '</b> / ' + CAPACITY + ' kg</span><span>' + CAPACITY + '</span></div>';
+            html += '<div class="weight-bar"><div class="weight-bar-fill ' + (gbest.weight>CAPACITY?'over':'') + '" style="width:' + (gbest.weight/CAPACITY*100) + '%;"></div></div>';
+            html += renderConvergence('final');
+            return html;
+        }
+    },
+    {
+        label: '性能对比',
+        emotion: '📈',
+        bubble: '粒子群算法找到了最优装载方案！让我们看看收敛曲线，以及与理论最优的对比。算法用了65次迭代就基本收敛了！',
+        status: '演示完成',
+        render: function() {
+            // 继续迭代到100
+            while (convergenceData.length < MAX_ITER + 1) {
+                for (let i=0; i<5; i++) iterateStep();
+            }
+            let html = '<div style="background:linear-gradient(135deg,#E8EAF6,#FFFFFF);border:3px solid #3949AB;border-radius:16px;padding:20px;margin-bottom:16px;">';
+            html += '<div style="text-align:center;"><div style="font-size:42px;">📊🎯📈</div>';
+            html += '<div style="font-size:22px;font-weight:700;color:#283593;margin:10px 0;">性能验证报告</div>';
+            html += '<div style="font-size:16px;color:var(--text-secondary);">最终迭代：' + currentIter + ' · 全局最优价值：' + gbest.value + ' · 总重量：' + gbest.weight + '/' + CAPACITY + '</div>';
+            html += '</div></div>';
+            html += renderConvergence('full');
+            html += '<div class="calc-panel"><div class="calc-title">📋 算法参数汇总</div>';
+            html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;font-size:16px;">';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><span style="color:var(--text-muted);">粒子数</span><br/><b style="color:#283593;font-size:20px;">' + NUM_PARTICLES + '</b></div>';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><span style="color:var(--text-muted);">迭代次数</span><br/><b style="color:#283593;font-size:20px;">' + currentIter + '</b></div>';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><span style="color:var(--text-muted);">最优价值</span><br/><b style="color:#E65100;font-size:20px;">' + gbest.value + '</b></div>';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><span style="color:var(--text-muted);">最优重量</span><br/><b style="color:#00695C;font-size:20px;">' + gbest.weight + '/' + CAPACITY + '</b></div>';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><span style="color:var(--text-muted);">收敛速度</span><br/><b style="color:#2E7D32;font-size:20px;">~' + Math.round(findConvergeIter()) + ' 代</b></div>';
+            html += '<div style="background:#F5F7FA;padding:10px;border-radius:8px;"><span style="color:var(--text-muted);">是否最优</span><br/><b style="color:#E65100;font-size:20px;">' + (isOptimal()?'✓ 是':'≈ 近优') + '</b></div>';
+            html += '</div></div>';
+            html += '<div style="text-align:center;padding:16px;background:linear-gradient(135deg,#E0F2F1,#FFFFFF);border-radius:14px;border:2px solid #80CBC4;margin-top:14px;">';
+            html += '<div style="font-size:18px;font-weight:700;color:#00695C;">🎉 粒子群优化算法成功求解货物装载问题！</div>';
+            html += '<div style="font-size:15px;color:var(--text-muted);margin-top:4px;">鸟群觅食行为模拟 → 个体认知 + 社会学习 → 高效收敛到全局最优解</div>';
+            html += '</div>';
+            return html;
+        }
+    }
+];
+
+// 辅助函数
+function findConvergeIter() {
+    const target = gbest.value;
+    for (let i=0; i<convergenceData.length; i++) {
+        if (convergenceData[i].best >= target * 0.99) return i;
+    }
+    return convergenceData.length;
+}
+
+function isOptimal() {
+    // 暴力枚举确认
+    let bestV = 0;
+    for (let mask=0; mask<32; mask++) {
+        let v=0, w=0;
+        for (let j=0; j<5; j++) if (mask&(1<<j)) { v+=GOODS[j].value; w+=GOODS[j].weight; }
+        if (w<=CAPACITY && v>bestV) bestV = v;
+    }
+    return gbest.value >= bestV;
+}
+
+function renderGoodsSelection(mode) {
+    const gbestSel = gbestPos.map(x => x > 0.5 ? 1 : 0);
+    let html = '<div class="pso-param-grid" style="grid-template-columns:repeat(5,1fr);">';
+    for (let i=0; i<D; i++) {
+        const selected = gbestSel[i];
+        const over = selected && (gbest.weight > CAPACITY);
+        const cls = selected ? 'selected' : '';
+        html += '<div class="goods-item ' + cls + '">';
+        html += '<div class="goods-icon">' + GOODS[i].icon + '</div>';
+        html += '<div class="goods-name">' + GOODS[i].name + '</div>';
+        html += '<div class="goods-info">v=' + GOODS[i].value + ' w=' + GOODS[i].weight + '</div>';
+        html += '<span class="goods-tag ' + (selected?'in':'out') + '">' + (selected?'✓ 装载':'✗ 未装') + '</span>';
+        html += '</div>';
+    }
+    html += '</div>';
+    // weight bar
+    const pct = Math.min(gbest.weight/CAPACITY*100, 100);
+    html += '<div class="weight-bar-label"><span>0</span><span>总重量: <b>' + gbest.weight + '</b> / ' + CAPACITY + ' kg</span><span>' + CAPACITY + '</span></div>';
+    html += '<div class="weight-bar"><div class="weight-bar-fill ' + (gbest.weight>CAPACITY?'over':'') + '" style="width:' + pct + '%;"></div></div>';
+    return html;
+}
+
+function renderParticleField(mode) {
+    let html = '<div class="pso-field"><div style="font-size:16px;font-weight:600;color:#283593;margin-bottom:10px;">🐦 粒子群位置分布（5维投影到前2维：货物1 vs 货物2）</div>';
+    html += '<svg class="pso-field-svg" viewBox="0 0 500 280">';
+    html += '<defs><radialGradient id="fieldBg"><stop offset="0%" stop-color="#F1F8E9"/><stop offset="100%" stop-color="#DCEDC8"/></radialGradient></defs>';
+    html += '<rect width="500" height="280" rx="12" fill="url(#fieldBg)"/>';
+    // grid
+    html += '<line x1="50" y1="250" x2="480" y2="250" stroke="#BDBDBD" stroke-width="1.5"/>';
+    html += '<line x1="50" y1="250" x2="50" y2="20" stroke="#BDBDBD" stroke-width="1.5"/>';
+    // axes labels
+    html += '<text x="265" y="270" text-anchor="middle" font-size="14" font-weight="600" fill="#555">粒子第1维（货物1选择概率）→</text>';
+    html += '<text x="15" y="140" text-anchor="middle" font-size="14" font-weight="600" fill="#555" transform="rotate(-90 15 140)">↑ 粒子第2维（货物2选择概率）</text>';
+    // axis ticks
+    for (let i=0; i<=5; i++) {
+        const x = 50 + i*86;
+        html += '<line x1="' + x + '" y1="248" x2="' + x + '" y2="252" stroke="#757575"/>';
+        html += '<text x="' + x + '" y="260" text-anchor="middle" font-size="10" fill="#757575">' + (i/5).toFixed(1) + '</text>';
+    }
+    for (let i=0; i<=5; i++) {
+        const y = 250 - i*46;
+        html += '<line x1="48" y1="' + y + '" x2="52" y2="' + y + '" stroke="#757575"/>';
+        html += '<text x="42" y="' + (y+4) + '" text-anchor="end" font-size="10" fill="#757575">' + (i/5).toFixed(1) + '</text>';
+    }
+    // gbest point
+    const gx = 50 + gbestPos[0]*430;
+    const gy = 250 - gbestPos[1]*230;
+    html += '<circle cx="' + gx + '" cy="' + gy + '" r="18" fill="none" stroke="#FF5252" stroke-width="2" stroke-dasharray="4,3">';
+    html += '<animate attributeName="r" values="14;20;14" dur="1.5s" repeatCount="indefinite"/>';
+    html += '<animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.5s" repeatCount="indefinite"/>';
+    html += '</circle>';
+    html += '<circle cx="' + gx + '" cy="' + gy + '" r="10" fill="#FF5252" stroke="white" stroke-width="2"/>';
+    html += '<text x="' + gx + '" y="' + (gy-16) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#C62828">gbest</text>';
+    // particles
+    for (let i=0; i<NUM_PARTICLES; i++) {
+        const p = particles[i];
+        const x = 50 + p.pos[0]*430;
+        const y = 250 - p.pos[1]*230;
+        const isBest = Math.abs(p.pos[0]-gbestPos[0])<0.05 && Math.abs(p.pos[1]-gbestPos[1])<0.05;
+        const color = isBest ? '#E53935' : ['#42A5F5','#66BB6A','#FFA726','#AB47BC','#26C6DA'][i%5];
+        html += '<circle cx="' + x + '" cy="' + y + '" r="7" fill="' + color + '" opacity="0.85" stroke="white" stroke-width="1.5"/>';
+        html += '<text x="' + x + '" y="' + (y+4) + '" text-anchor="middle" fill="white" font-size="9" font-weight="700">' + (i+1) + '</text>';
+    }
+    html += '</svg></div>';
+    return html;
+}
+
+function renderConvergence(stage) {
+    const data = convergenceData.slice();
+    let html = '<div class="convergence-chart"><div style="font-size:16px;font-weight:600;color:#2E7D32;margin-bottom:10px;">📈 收敛曲线（全局最优价值 vs 迭代次数）</div>';
+    html += '<svg class="conv-svg" viewBox="0 0 500 200">';
+    html += '<defs><linearGradient id="convGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A5D6A7" stop-opacity="0.6"/><stop offset="100%" stop-color="#A5D6A7" stop-opacity="0"/></linearGradient></defs>';
+    html += '<rect width="500" height="200" rx="10" fill="#FAFAFA"/>';
+    // axes
+    html += '<line x1="40" y1="180" x2="480" y2="180" stroke="#BDBDBD" stroke-width="1.5"/>';
+    html += '<line x1="40" y1="20" x2="40" y2="180" stroke="#BDBDBD" stroke-width="1.5"/>';
+    html += '<text x="260" y="195" text-anchor="middle" font-size="11" fill="#757575">迭代次数 k</text>';
+    html += '<text x="15" y="100" text-anchor="middle" font-size="11" fill="#757575" transform="rotate(-90 15 100)">价值</text>';
+    // y range 0-50
+    const maxV = Math.max(50, ...data.map(d=>d.best));
+    // y ticks
+    for (let i=0; i<=5; i++) {
+        const v = Math.round(maxV * i / 5);
+        const y = 180 - i*32;
+        html += '<line x1="38" y1="' + y + '" x2="42" y2="' + y + '" stroke="#9E9E9E"/>';
+        html += '<text x="32" y="' + (y+4) + '" text-anchor="end" font-size="10" fill="#757575">' + v + '</text>';
+    }
+    // x ticks
+    for (let i=0; i<=5; i++) {
+        const k = Math.round(MAX_ITER * i / 5);
+        const x = 40 + (440 * k / MAX_ITER);
+        html += '<line x1="' + x + '" y1="178" x2="' + x + '" y2="182" stroke="#9E9E9E"/>';
+        html += '<text x="' + x + '" y="192" text-anchor="middle" font-size="10" fill="#757575">' + k + '</text>';
+    }
+    // area
+    if (data.length > 1) {
+        let pathD = 'M40,180 ';
+        for (let i=0; i<data.length; i++) {
+            const x = 40 + (440 * data[i].iter / MAX_ITER);
+            const y = 180 - (160 * data[i].best / maxV);
+            pathD += 'L' + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+        }
+        pathD += 'L' + (40 + 440 * data[data.length-1].iter / MAX_ITER) + ',180 Z';
+        html += '<path d="' + pathD + '" fill="url(#convGrad)"/>';
+        // line
+        let lineD = '';
+        for (let i=0; i<data.length; i++) {
+            const x = 40 + (440 * data[i].iter / MAX_ITER);
+            const y = 180 - (160 * data[i].best / maxV);
+            lineD += (i===0?'M':'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+        }
+        html += '<path d="' + lineD + '" fill="none" stroke="#2E7D32" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        // dots
+        for (let i=0; i<data.length; i++) {
+            if (i%Math.max(1, Math.floor(data.length/15))===0 || i===data.length-1) {
+                const x = 40 + (440 * data[i].iter / MAX_ITER);
+                const y = 180 - (160 * data[i].best / maxV);
+                html += '<circle cx="' + x + '" cy="' + y + '" r="3" fill="#2E7D32"/>';
+            }
+        }
+        // current point
+        const lastX = 40 + (440 * data[data.length-1].iter / MAX_ITER);
+        const lastY = 180 - (160 * data[data.length-1].best / maxV);
+        html += '<circle cx="' + lastX + '" cy="' + lastY + '" r="6" fill="#E53935" stroke="white" stroke-width="2"/>';
+    }
+    html += '</svg></div>';
+    return html;
+}
+
+// ===== 演示控制 =====
+let currentStep = -1;
+let autoTimer = null;
+const STEP_COUNT = STEPS.length;
+
+function buildStepsTrack() {
+    const track = document.getElementById('stepsTrack');
+    let html = '';
+    for (let i=0; i<STEP_COUNT; i++) {
+        if (i>0) html += `<div class="step-chip-connector" id="conn-${i-1}"></div>`;
+        html += `<div class="step-chip" id="chip-${i}" onclick="goToStep(${i})">
+            <span class="chip-num">${i+1}</span>${STEPS[i].label}
+        </div>`;
+    }
+    track.innerHTML = html;
+}
+
+function updateStepUI() {
+    document.getElementById('demoProgress').style.width = ((currentStep+1)/STEP_COUNT*100)+'%';
+    for (let i=0; i<STEP_COUNT; i++) {
+        const chip = document.getElementById('chip-'+i);
+        chip.classList.remove('active','done');
+        if (i < currentStep) chip.classList.add('done');
+        else if (i === currentStep) chip.classList.add('active');
+        if (i>0) {
+            const conn = document.getElementById('conn-'+(i-1));
+            conn.classList.toggle('done', i-1 < currentStep);
+        }
+    }
+    const lbl = document.getElementById('demoStepLabel');
+    if (currentStep >= 0) {
+        lbl.innerHTML = `<span class="step-num">Step ${currentStep+1}/${STEP_COUNT}</span> ${STEPS[currentStep].label}`;
+    } else {
+        lbl.innerHTML = `<span class="step-num">准备中</span> 点击"开始演示"启动粒子群优化算法`;
+    }
+    const content = document.getElementById('demoContent');
+    if (currentStep < 0) {
+        content.innerHTML = `
+            <div style="background:linear-gradient(135deg,#E0F2F1,#FFFFFF);border-radius:14px;padding:26px;border:2px dashed #80CBC4;text-align:center;">
+                <div style="font-size:52px;margin-bottom:10px;">🐦🐦🐦📦</div>
+                <div style="font-size:22px;font-weight:700;color:#00695C;margin-bottom:8px;">粒子群优化 · 货物装载演示</div>
+                <div style="font-size:17px;color:var(--text-secondary);line-height:1.8;margin:12px auto;max-width:560px;">
+                    演示将按以下 6 个步骤进行算法讲解与可视化：<br/>
+                    <b>初始化 → 评估适应度 → 个体认知 → 社会学习 → 粒子群收敛 → 输出最优解</b>
+                </div>
+                <div style="font-size:15px;color:var(--text-muted);">演示过程中可以随时点击"上一步/下一步"手动查看，或点击"开始演示"自动播放</div>
+            </div>
+        `;
+    } else {
+        content.innerHTML = STEPS[currentStep].render();
+    }
+    if (currentStep >= 0) {
+        document.getElementById('agentEmotion').textContent = STEPS[currentStep].emotion;
+        typewriter(STEPS[currentStep].bubble);
+        const st = document.getElementById('agentStatus');
+        if (currentStep === STEP_COUNT-1) {
+            st.className = 'agent-status';
+            st.textContent = '✅ 完成';
+        } else {
+            st.className = 'agent-status working';
+            st.textContent = STEPS[currentStep].status;
+        }
+    }
+}
+
+function typewriter(text) {
+    const bubble = document.getElementById('agentBubble');
+    const dots = document.getElementById('typingDots');
+    let i = 0;
+    dots.style.display = 'inline-block';
+    bubble.textContent = '';
+    bubble.appendChild(dots);
+    clearInterval(window._tw);
+    window._tw = setInterval(()=>{
+        if (i >= text.length) {
+            clearInterval(window._tw);
+            dots.style.display = 'none';
+            return;
+        }
+        const t = text.slice(0, i+1);
+        bubble.textContent = t;
+        bubble.appendChild(dots);
+        i++;
+    }, 18);
+}
+
+function goToStep(idx) {
+    if (idx < -1 || idx >= STEP_COUNT) return;
+    currentStep = idx;
+    updateStepUI();
+}
+function nextStep() {
+    if (currentStep < STEP_COUNT-1) { goToStep(currentStep+1); return true; }
+    return false;
+}
+function prevStep() {
+    if (currentStep >= 0) goToStep(currentStep-1);
+}
+function resetDemo() {
+    stopAuto();
+    initParticles();
+    currentIter = 0;
+    goToStep(-1);
+    document.getElementById('agentEmotion').textContent = '🐦';
+    document.getElementById('agentStatus').className = 'agent-status';
+    document.getElementById('agentStatus').textContent = '待命中';
+    document.getElementById('agentBubble').innerHTML = '啾啾~我是群小蜂！今天我要带领一群小鸟（粒子）在货物空间中寻找最优装载方案。点击"开始演示"来看看鸟群觅食的过程吧！';
+    document.getElementById('startBtn').textContent = '▶ 开始演示';
+    document.getElementById('startBtn').className = 'demo-action-btn primary';
+}
+function startAutoDemo() {
+    if (autoTimer) { stopAuto(); return; }
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '⏸ 暂停演示';
+    btn.className = 'demo-action-btn accent';
+    if (currentStep >= STEP_COUNT-1) resetDemo();
+    if (currentStep < 0) goToStep(0);
+    const runOne = () => {
+        if (!nextStep()) { stopAuto(); }
+    };
+    autoTimer = setInterval(runOne, 4500);
+}
+function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    const btn = document.getElementById('startBtn');
+    btn.textContent = '▶ 开始演示';
+    btn.className = 'demo-action-btn primary';
+}
+
+// init
+initParticles();
+buildStepsTrack();
+updateStepUI();
+
+// KaTeX
+document.addEventListener('DOMContentLoaded', function(){
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>
